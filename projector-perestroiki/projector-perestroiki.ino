@@ -22,6 +22,9 @@ const char *OTAName = "KREDENCAS";           // A name and a password for the OT
 const char *OTAPassword = "ledinis";
 
 #define LED1   D5
+// define directions for LED fade
+#define UP 0
+#define DOWN 1
 
 const char* mdnsName = "projector"; // Domain name for the mDNS responder
 
@@ -32,6 +35,7 @@ void startMDNS();
 void startServer();
 
 void setup() {
+  
   pinMode(LED1, OUTPUT);    // the pins with LEDs connected are outputs
   digitalWrite(LED1, LOW);
   pinMode(D0, OUTPUT);
@@ -59,23 +63,57 @@ void setup() {
   
 }
 
-bool rainbow = false;
+bool flicker = false;
+int timeStep = 25;
+int brightnessStep = 1;
+unsigned long previousMillis = 0;
+int maxBrightness = 121;
+int brightness = maxBrightness;
+byte fadeDirection = DOWN;
+
+
 
 void loop() {
   webSocket.loop();                           // constantly check for websocket events
   server.handleClient();                      // run the server
   ArduinoOTA.handle();                        // listen for OTA events
+  if(flicker) {
+      unsigned long currentMillis = millis();
+      int currentBrightness = brightness;
+      if (currentMillis - previousMillis >= timeStep) {
+         // save the last time you blinked the LED
+         previousMillis = currentMillis;
+         brightness = currentBrightness - brightnessStep;
+         Serial.println(brightness);
 
-  if(rainbow) {
-    int v = 22 + random(100);
-    analogWrite(LED1, v);
-    Serial.println(v);
-    for(int i = 0; i < random(50); i++){
-      delay(10);
-      webSocket.loop();
+       if(brightness < 60) {
+          fadeDirection = UP;
+          analogWrite(LED1, 60);
+       }
+       if (fadeDirection == UP) {
+        Serial.println("changing");
+        while(brightness < 120) {
+            brightness = brightness + brightnessStep;
+            analogWrite(LED1, brightness); 
+            Serial.println(brightness);
+            delay(2);
+            }  
+         fadeDirection = DOWN; 
+        }  
+  
+            
+         else if(brightness > 121) {
+          digitalWrite(LED1, HIGH);
+        } 
+        
+        else {
+          analogWrite(LED1,  brightness);
+        }
     }
   }
+  webSocket.loop();
 }
+
 
 
 
@@ -250,7 +288,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     case WStype_CONNECTED: {              // if a new websocket connection is established
         IPAddress ip = webSocket.remoteIP(num);
         Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
-        rainbow = false;                  // Turn rainbow off when a new connection is established
+        flicker = false;                  // Turn flicker off when a new connection is established
       }
       break;
     case WStype_TEXT:                     // if new text data is received
@@ -267,10 +305,10 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           analogWrite(LED1,  b);
         }
         
-      } else if (payload[0] == 'R') {                      // the browser sends an R when the rainbow effect is enabled
-        rainbow = true;
-      } else if (payload[0] == 'N') {                      // the browser sends an N when the rainbow effect is disabled
-        rainbow = false;
+      } else if (payload[0] == 'R') {                      // the browser sends an R when the flicker effect is enabled
+        flicker = true;
+      } else if (payload[0] == 'N') {                      // the browser sends an N when the flicker effect is disabled
+        flicker = false;
       }
       break;
   }
