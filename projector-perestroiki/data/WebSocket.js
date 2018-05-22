@@ -62,3 +62,10 @@ function setBlinkMax() {
 		console.log('Sending value: ' + str); 
 		connection.send(str);
 }
+
+function setBlinkRate() {
+   		var b = parseInt(document.getElementById('blinkRate').value);
+		var str = '_'+ b.toString(16);    
+		console.log('Sending value: ' + str); 
+		connection.send(str);
+}

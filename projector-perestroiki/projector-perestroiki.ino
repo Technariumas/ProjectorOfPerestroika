@@ -58,14 +58,10 @@ void setup() {
   startServer();               // Start a HTTP server with a file read handler and an upload handler
   
 }
-bool preheat = false;
 const int preheatValue = 30;
-int timeStep = 25;
-int brightnessStep = 1;
-unsigned long previousMillis = 0;
-int maxBrightness = 121;
-int brightness = 0;
-byte fadeDirection = DOWN;
+int maxBrightness = 122;
+int brightness = 122;
+int blinkRate = 50;
 String state = "OFF";
 
 void loop() {
@@ -81,25 +77,26 @@ void loop() {
   else if (state == "BLINK") {
     startFlicker();
   }
+  else {
+    Serial.println("Error");
+    }
  }
 
 
 void startPreheat() {
     shine(preheatValue);
-    Serial.println("Preheat");
   }
 
 void startShine() {
     shine(brightness);
-    Serial.println("Shining");
   }
 
 void startFlicker() {
-    int v = 20 + random(maxBrightness);
+    int v = 22 + random(maxBrightness);
     shine(v);
-    Serial.println("Blinking");
-    Serial.println(v);
-    for(int i = 0; i < random(50); i++){
+    //Serial.println("Blinking");
+    //Serial.println(v);
+    for(int i = 0; i < random(blinkRate); i++){
       delay(10);
       webSocket.loop();
     }
@@ -307,6 +304,10 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         else if (payload[0] == '*') {                      // the browser sends a * when the flicker effect is enabled
         uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
         maxBrightness =          val & 0x3FF;                      // B: bits  0-9
+      }
+      else if (payload[0] == '_') {                      // the browser sends a * when the flicker effect is enabled
+        uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
+        blinkRate =          val & 0x3FF;                      // B: bits  0-9
       }
        else if (payload[0] == 'O') {                      // the browser sends an O when the preheat mode is on
         state = "OFF";
