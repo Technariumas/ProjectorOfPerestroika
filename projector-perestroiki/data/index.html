@@ -21,10 +21,20 @@
             <table>
                 <tr>
                     <td style="width:14.4px; text-align: right">Dim: </td>
-                    <td><input class="enabled" id="dimmer" type="range" min="0" max="127" step="1" oninput="sendRGB();" value="0"></td>
+                    <td><input class="enabled" id="dimmer" type="range" min="0" max="127" step="1" oninput="useDimmer();" value="0"></td>
                 </tr>
             </table>
-            <p style="margin:8px 0px"><button id="randomizeButton" class="button" style="background-color:#999" onclick="randomize();">Blink</button></p>
+            <p style="margin:8px 0px"><button id="offButton" class="button" style="background-color:#999" onclick="preheat();">Off</button>
+            <button id="randomizeButton" class="button" style="background-color:#999" onclick="randomize();">Blink</button>
+            <button id="shineButton" class="button" style="background-color:#999" onclick="shine();">Shine</button></p>
+        
+            <table>
+            <tr>
+                  <td style="width:14.4px; text-align: right">Max. blink brightness: </td>
+                  <td><input class="enabled" id="blinkMax" type="range" min="0" max="127" step="1" oninput="setBlinkMax();" value="0"></td>
+            </tr>
+            </table>
+        
         </div>
     </center>
 </body>

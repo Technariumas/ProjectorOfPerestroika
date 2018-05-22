@@ -20,7 +20,6 @@ const char *password = "perestroika";   // The password required to connect to i
 
 const char *OTAName = "KREDENCAS";           // A name and a password for the OTA service
 const char *OTAPassword = "ledinis";
-
 #define LED1   D5
 // define directions for LED fade
 #define UP 0
@@ -62,13 +61,13 @@ void setup() {
   startServer();               // Start a HTTP server with a file read handler and an upload handler
   
 }
-
-bool flicker = false;
+bool preheat = false;
+const int preheatValue = 30;
 int timeStep = 25;
 int brightnessStep = 1;
 unsigned long previousMillis = 0;
 int maxBrightness = 121;
-int brightness = maxBrightness;
+int brightness = 0;
 byte fadeDirection = DOWN;
 
 
@@ -77,44 +76,32 @@ void loop() {
   webSocket.loop();                           // constantly check for websocket events
   server.handleClient();                      // run the server
   ArduinoOTA.handle();                        // listen for OTA events
-  if(flicker) {
-      unsigned long currentMillis = millis();
-      int currentBrightness = brightness;
-      if (currentMillis - previousMillis >= timeStep) {
-         // save the last time you blinked the LED
-         previousMillis = currentMillis;
-         brightness = currentBrightness - brightnessStep;
-         Serial.println(brightness);
-
-       if(brightness < 60) {
-          fadeDirection = UP;
-          analogWrite(LED1, 60);
-       }
-       if (fadeDirection == UP) {
-        Serial.println("changing");
-        while(brightness < 120) {
-            brightness = brightness + brightnessStep;
-            analogWrite(LED1, brightness); 
-            Serial.println(brightness);
-            delay(2);
-            }  
-         fadeDirection = DOWN; 
-        }  
-  
-            
-         else if(brightness > 121) {
-          digitalWrite(LED1, HIGH);
-        } 
-        
-        else {
-          analogWrite(LED1,  brightness);
-        }
+  if(preheat) {
+     //analogWrite(LED1, preheatValue);
+    shine(preheatValue);
     }
-  }
-  webSocket.loop();
+  //webSocket.loop();
 }
 
+void flicker(int maxBrightness) {
+  int v = 22 + random(100);
+  shine(v);
+  Serial.println(maxBrightness);
+  for(int i = 0; i < random(50); i++){
+    delay(10);
+    } 
+  }
+  
 
+void shine(int brightness) {
+          if(brightness < 3) {
+          digitalWrite(LED1, LOW);
+        } else if(brightness > 122) {
+          digitalWrite(LED1, HIGH);
+        } else {
+          analogWrite(LED1,  brightness);
+        }
+}
 
 
 void startWiFi() { // Start a Wi-Fi access point, and try to connect to some given access points. Then wait for either an AP or STA connection
@@ -288,33 +275,33 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     case WStype_CONNECTED: {              // if a new websocket connection is established
         IPAddress ip = webSocket.remoteIP(num);
         Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
-        flicker = false;                  // Turn flicker off when a new connection is established
+        preheat = true;                  // Turn flicker off when a new connection is established
       }
       break;
     case WStype_TEXT:                     // if new text data is received
       Serial.printf("[%u] get Text: %s\n", num, payload);
-      if (payload[0] == '#') {            // we get RGB data
-        uint32_t rgb = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode rgb data
-        int b =          rgb & 0x3FF;                      // B: bits  0-9
-        Serial.println(b);
-        if(b < 3) {
-          digitalWrite(LED1, LOW);
-        } else if(b > 122) {
-          digitalWrite(LED1, HIGH);
-        } else {
-          analogWrite(LED1,  b);
-        }
-        
-      } else if (payload[0] == 'R') {                      // the browser sends an R when the flicker effect is enabled
-        flicker = true;
-      } else if (payload[0] == 'N') {                      // the browser sends an N when the flicker effect is disabled
-        flicker = false;
+      if (payload[0] == '#') {            // we get brightness data
+        uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
+        brightness =          val & 0x3FF;                      // B: bits  0-9
+        Serial.println(brightness);
+        preheat = false;
+        shine(brightness);
+        } 
+        else if (payload[0] == '*') {                      // the browser sends a * when the flicker effect is enabled
+        uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
+        maxBrightness =          val & 0x3FF;                      // B: bits  0-9
+        preheat = false;
+        Serial.println("Flicker");
+        Serial.println(maxBrightness);
+        flicker(maxBrightness);
+      }
+
+       else if (payload[0] == 'O') {                      // the browser sends an O when the preheat mode is on
+        preheat = true;
       }
       break;
   }
 }
-
-
 
 String formatBytes(size_t bytes) { // convert sizes in bytes to KB and MB
   if (bytes < 1024) {

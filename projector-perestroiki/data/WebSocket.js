@@ -1,4 +1,4 @@
-var rainbowEnable = false;
+
 var connection = new WebSocket('ws://'+location.hostname+':81/', ['arduino']);
 connection.onopen = function () {
     connection.send('Connect ' + new Date());
@@ -13,7 +13,7 @@ connection.onclose = function(){
     console.log('WebSocket connection closed');
 };
 
-function sendRGB() {
+function useDimmer() {
 //    var b = Math.round(document.getElementById('dimmer').value**2/1023);
     var b = parseInt(document.getElementById('dimmer').value);
     var str = '#'+ b.toString(16);    
@@ -21,18 +21,44 @@ function sendRGB() {
     connection.send(str);
 }
 
+function preheat() {
+	connection.send("O");
+	document.getElementById('offButton').style.backgroundColor = '#00878F';
+	document.getElementById('randomizeButton').style.backgroundColor = '#999';
+	document.getElementById('shineButton').style.backgroundColor = '#999';
+    document.getElementById('dimmer').className = 'disabled';
+    document.getElementById('dimmer').disabled = true;
+    document.getElementById('blinkMax').className = 'disabled';
+    document.getElementById('blinkMax').disabled = true;
+
+	}
+	
+function shine() {
+	document.getElementById('dimmer').className = 'enabled';
+    document.getElementById('dimmer').disabled = false;
+	useDimmer()
+	document.getElementById('shineButton').style.backgroundColor = '#00878F';
+	document.getElementById('offButton').style.backgroundColor = '#999';
+	document.getElementById('randomizeButton').style.backgroundColor = '#999';
+	document.getElementById('blinkMax').className = 'disabled';
+    document.getElementById('blinkMax').disabled = true;
+
+	}	
+
 function randomize(){
-    rainbowEnable = ! rainbowEnable;
-    if(rainbowEnable){
-        connection.send("R");
-        document.getElementById('randomizeButton').style.backgroundColor = '#00878F';
-        document.getElementById('dimmer').className = 'disabled';
-        document.getElementById('dimmer').disabled = true;
-    } else {
-        connection.send("N");
-        document.getElementById('randomizeButton').style.backgroundColor = '#999';
-        document.getElementById('dimmer').className = 'enabled';
-        document.getElementById('dimmer').disabled = false;
-        sendRGB();
-    }  
+	document.getElementById('blinkMax').className = 'enabled';
+    document.getElementById('blinkMax').disabled = false;
+	setBlinkMax()
+    document.getElementById('offButton').style.backgroundColor = '#999';
+    document.getElementById('randomizeButton').style.backgroundColor = '#00878F';
+	document.getElementById('shineButton').style.backgroundColor = '#999';
+    document.getElementById('dimmer').className = 'disabled';
+    document.getElementById('dimmer').disabled = true; 
+}
+
+function setBlinkMax() {
+   		var b = parseInt(document.getElementById('blinkMax').value);
+		var str = '*'+ b.toString(16);    
+		console.log('Sending value: ' + str); 
+		connection.send(str);
 }
