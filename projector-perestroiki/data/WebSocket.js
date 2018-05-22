@@ -26,34 +26,34 @@ function preheat() {
 	document.getElementById('offButton').style.backgroundColor = '#00878F';
 	document.getElementById('randomizeButton').style.backgroundColor = '#999';
 	document.getElementById('shineButton').style.backgroundColor = '#999';
-    document.getElementById('dimmer').className = 'disabled';
-    document.getElementById('dimmer').disabled = true;
-    document.getElementById('blinkMax').className = 'disabled';
-    document.getElementById('blinkMax').disabled = true;
+    //document.getElementById('dimmer').className = 'disabled';
+    //document.getElementById('dimmer').disabled = true;
+    //document.getElementById('blinkMax').className = 'disabled';
+    //document.getElementById('blinkMax').disabled = true;
 
 	}
 	
 function shine() {
+	connection.send("S");	
 	document.getElementById('dimmer').className = 'enabled';
     document.getElementById('dimmer').disabled = false;
-	useDimmer()
 	document.getElementById('shineButton').style.backgroundColor = '#00878F';
 	document.getElementById('offButton').style.backgroundColor = '#999';
 	document.getElementById('randomizeButton').style.backgroundColor = '#999';
-	document.getElementById('blinkMax').className = 'disabled';
-    document.getElementById('blinkMax').disabled = true;
+	//document.getElementById('blinkMax').className = 'disabled';
+    //document.getElementById('blinkMax').disabled = true;
 
 	}	
 
 function randomize(){
 	document.getElementById('blinkMax').className = 'enabled';
     document.getElementById('blinkMax').disabled = false;
-	setBlinkMax()
+	connection.send("B");
     document.getElementById('offButton').style.backgroundColor = '#999';
     document.getElementById('randomizeButton').style.backgroundColor = '#00878F';
 	document.getElementById('shineButton').style.backgroundColor = '#999';
-    document.getElementById('dimmer').className = 'disabled';
-    document.getElementById('dimmer').disabled = true; 
+    //document.getElementById('dimmer').className = 'disabled';
+    //document.getElementById('dimmer').disabled = true; 
 }
 
 function setBlinkMax() {

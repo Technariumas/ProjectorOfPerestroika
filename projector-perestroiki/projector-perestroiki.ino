@@ -1,5 +1,3 @@
-
-
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiMulti.h>
 #include <ArduinoOTA.h>
@@ -9,7 +7,6 @@
 #include <WebSocketsServer.h>
 
 ESP8266WiFiMulti wifiMulti;       // Create an instance of the ESP8266WiFiMulti class, called 'wifiMulti'
-
 ESP8266WebServer server(80);       // create a web server on port 80
 WebSocketsServer webSocket = WebSocketsServer(81);    // create a websocket server on port 81
 
@@ -45,9 +42,8 @@ void setup() {
   delay(10);
   Serial.println("\r\n");
 
-//  analogWriteFreq(20000);
+  analogWriteFreq(20000);
   analogWriteRange(127);
-  analogWrite(D5, 3);
   
   startWiFi();                 // Start a Wi-Fi access point, and try to connect to some given access points. Then wait for either an AP or STA connection
   
@@ -70,27 +66,43 @@ unsigned long previousMillis = 0;
 int maxBrightness = 121;
 int brightness = 0;
 byte fadeDirection = DOWN;
-
-
+String state = "OFF";
 
 void loop() {
   webSocket.loop();                           // constantly check for websocket events
   server.handleClient();                      // run the server
   ArduinoOTA.handle();                        // listen for OTA events
-  if(preheat) {
-     //analogWrite(LED1, preheatValue);
-    shine(preheatValue);
+  if (state == "OFF") {
+    startPreheat();
+  }
+  else if (state == "SHINE") {
+    startShine();
     }
-  //webSocket.loop();
-}
+  else if (state == "BLINK") {
+    startFlicker();
+  }
+ }
 
-void flicker(int maxBrightness) {
-  int v = 22 + random(100);
-  shine(v);
-  Serial.println(maxBrightness);
-  for(int i = 0; i < random(50); i++){
-    delay(10);
-    } 
+
+void startPreheat() {
+    shine(preheatValue);
+    Serial.println("Preheat");
+  }
+
+void startShine() {
+    shine(brightness);
+    Serial.println("Shining");
+  }
+
+void startFlicker() {
+    int v = 20 + random(maxBrightness);
+    shine(v);
+    Serial.println("Blinking");
+    Serial.println(v);
+    for(int i = 0; i < random(50); i++){
+      delay(10);
+      webSocket.loop();
+    }
   }
   
 
@@ -276,7 +288,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     case WStype_CONNECTED: {              // if a new websocket connection is established
         IPAddress ip = webSocket.remoteIP(num);
         Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
-        preheat = true;                  // Turn flicker off when a new connection is established
+        state = "OFF";                  // Turn flicker off when a new connection is established
       }
       break;
     case WStype_TEXT:                     // if new text data is received
@@ -284,21 +296,20 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       if (payload[0] == '#') {            // we get brightness data
         uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
         brightness =          val & 0x3FF;                      // B: bits  0-9
-        Serial.println(brightness);
-        preheat = false;
-        shine(brightness);
-        } 
+        //state = "SHINE";
+        }
+        else if (payload[0] == 'S') {
+          state = "SHINE";
+        }
+        else if (payload[0] == 'B') {
+          state = "BLINK";
+        }
         else if (payload[0] == '*') {                      // the browser sends a * when the flicker effect is enabled
         uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
         maxBrightness =          val & 0x3FF;                      // B: bits  0-9
-        preheat = false;
-        Serial.println("Flicker");
-        Serial.println(maxBrightness);
-        flicker(maxBrightness);
       }
-
        else if (payload[0] == 'O') {                      // the browser sends an O when the preheat mode is on
-        preheat = true;
+        state = "OFF";
       }
       break;
   }
