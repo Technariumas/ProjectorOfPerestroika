@@ -45,8 +45,9 @@ void setup() {
   delay(10);
   Serial.println("\r\n");
 
-  analogWriteFreq(20000);
+//  analogWriteFreq(20000);
   analogWriteRange(127);
+  analogWrite(D5, 3);
   
   startWiFi();                 // Start a Wi-Fi access point, and try to connect to some given access points. Then wait for either an AP or STA connection
   
