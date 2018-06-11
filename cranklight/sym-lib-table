@@ -1,0 +1,4 @@
+(sym_lib_table
+  (lib (name dp3t)(type Legacy)(uri ${KIPRJMOD}/dp3t.lib)(options "")(descr ""))
+  (lib (name wemos_mini)(type Legacy)(uri /home/miceuz/Xaltura/shd18-badge/wemos_mini.lib)(options "")(descr ""))
+)
