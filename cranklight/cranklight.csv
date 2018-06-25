@@ -1,0 +1,17 @@
+Reference, Quantity, Value, Footprint, Datasheet, Distributor, Manufacturer, PartNo
+C3 C5 ,2,CP,Capacitors_THT:CP_Radial_D5.0mm_P2.50mm,~,Mouser/661-EKZN100E331MF11D,,
+C1 C2 C4 ,3,1u,Capacitor_SMD:C_0805_2012Metric_Pad1.15x1.50mm_HandSolder,~
+D1 ,1,GREEN,LED_SMD:LED_0805_2012Metric,~,,,GREEN
+D2 ,1,RED,LED_SMD:LED_0805_2012Metric,~,,,RED
+F1 ,1,Polyfuse,Fuse_Holders_and_Fuses:Fuse_Littelfuse-LVR100,~,Mouser/650-LVR100S,Littlefuse,LVR100S
+J1 ,1,Battery,Pin_Headers:Pin_Header_Straight_1x02_Pitch2.54mm,~
+J2 ,1,Bulb socket,Pin_Headers:Pin_Header_Straight_1x02_Pitch2.54mm,~
+MK1 MK2 MK3 ,3,Mounting_Hole,Mounting_Holes:MountingHole_3.7mm,
+Q1 ,1,Q_NMOS_GDS,TO_SOT_Packages_THT:TO-220-3_Horizontal,~,942-IRLB8721PBF,Infineon,IRLB8721PBF
+R1 ,1,300k,Resistors_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal,~
+R3 ,1,160,Resistors_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal,~
+R2 R4 ,2,1M,Resistors_SMD:R_0805_2012Metric_Pad1.15x1.50mm_HandSolder,~
+R5 R6 ,2,1k,Resistors_SMD:R_0805_2012Metric_Pad1.15x1.50mm_HandSolder,~
+SW1 ,1,SW_4PDT,wemos:4PDT,,Mouser/612-EG4208,E-SWITCH,EG4208
+U1 ,1,WeMos_mini,wemos:D1_mini_board,http://www.wemos.cc/Products/d1_mini.html
+U2 ,1,PTN04050CAD,wemos:PTN04050,,Mouser/595-PTN04050CAD,Texas Instruments,PTN04050CAD 

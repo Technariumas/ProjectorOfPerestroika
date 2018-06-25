@@ -1,0 +1,30 @@
+Drill report for /home/miceuz/Xaltura/ProjectorOfPerestroika/cranklight/cranklight.kicad_pcb
+Created on Fri 15 Jun 2018 02:22:47 PM EEST
+
+Copper Layer Stackup:
+    =============================================================
+    L1 :  F.Cu                      front
+    L2 :  B.Cu                      back
+
+
+Drill file 'cranklight.drl' contains
+    plated through holes:
+    =============================================================
+    T1  0,60mm  0,024"  (6 holes)
+    T2  0,80mm  0,031"  (20 holes)
+    T3  1,00mm  0,039"  (11 holes)
+    T4  1,02mm  0,040"  (16 holes)
+    T5  1,25mm  0,049"  (2 holes)
+    T6  1,40mm  0,055"  (4 holes)
+    T7  4,00mm  0,157"  (1 hole)
+
+    Total plated holes count 60
+
+
+Not plated through holes are merged with plated holes
+    unplated through holes:
+    =============================================================
+    T8  3,00mm  0,118"  (1 hole)
+    T9  4,00mm  0,157"  (3 holes)
+
+    Total unplated holes count 4
