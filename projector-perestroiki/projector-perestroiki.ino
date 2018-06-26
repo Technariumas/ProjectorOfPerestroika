@@ -10,6 +10,8 @@ ESP8266WiFiMulti wifiMulti;       // Create an instance of the ESP8266WiFiMulti 
 ESP8266WebServer server(80);       // create a web server on port 80
 WebSocketsServer webSocket = WebSocketsServer(81);    // create a websocket server on port 81
 
+//WebSocketsClient webSocketsClient;
+
 File fsUploadFile;                                    // a File variable to temporarily store the received file
 
 const char *ssid = "projector"; // The name of the Wi-Fi network that will be created
@@ -17,11 +19,14 @@ const char *password = "perestroika";   // The password required to connect to i
 
 const char *OTAName = "KREDENCAS";           // A name and a password for the OTA service
 const char *OTAPassword = "ledinis";
-#define LED1   D5
+#define LAMP D0
 // define directions for LED fade
 #define UP 0
 #define DOWN 1
-
+#define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
+#define TIME_TO_SLEEP 5 /* Time ESP32 will go to sleep (in seconds) */
+float voltage = 0;
+int sleepTime = 5;  
 const char* mdnsName = "projector"; // Domain name for the mDNS responder
 
 void startWiFi();
@@ -31,13 +36,11 @@ void startMDNS();
 void startServer();
 
 void setup() {
-  
-  pinMode(LED1, OUTPUT);    // the pins with LEDs connected are outputs
-  digitalWrite(LED1, LOW);
+  pinMode(LAMP, OUTPUT);    // the pins with LEDs connected are outputs
+  digitalWrite(LAMP, LOW);
   pinMode(D0, OUTPUT);
   digitalWrite(D0, LOW);
   pinMode(D3, INPUT_PULLUP);
-
   Serial.begin(115200);        // Start the Serial communication to send messages to the computer
   delay(10);
   Serial.println("\r\n");
@@ -58,19 +61,33 @@ void setup() {
   startServer();               // Start a HTTP server with a file read handler and an upload handler
   
 }
-const int preheatValue = 30;
+const int preheatValue = 3;
 int maxBrightness = 122;
 int brightness = 122;
 int blinkRate = 50;
 String state = "OFF";
+unsigned long prevMillis = millis();
+
 
 void loop() {
   webSocket.loop();                           // constantly check for websocket events
   server.handleClient();                      // run the server
   ArduinoOTA.handle();                        // listen for OTA events
+  if(millis() > prevMillis + 3000) { 
+    voltage = 4*(5.0 / 1023.0)*analogRead(A0);
+    String payload = String(voltage);
+    webSocket.sendTXT(0, payload);    
+    if (voltage < 3) {
+    state = "LOW";
+    }
+    prevMillis = millis();
+  }
   if (state == "OFF") {
     startPreheat();
   }
+  else if (state == "LOW") {
+    shine(0);
+    }
   else if (state == "SHINE") {
     startShine();
     }
@@ -81,7 +98,6 @@ void loop() {
     Serial.println("Error");
     }
  }
-
 
 void startPreheat() {
     shine(preheatValue);
@@ -95,7 +111,7 @@ void startFlicker() {
     int v = 22 + random(maxBrightness);
     shine(v);
     //Serial.println("Blinking");
-    //Serial.println(v);
+    //Serial.println(blinkRate);
     for(int i = 0; i < random(blinkRate); i++){
       delay(10);
       webSocket.loop();
@@ -105,11 +121,11 @@ void startFlicker() {
 
 void shine(int brightness) {
           if(brightness < 3) {
-          digitalWrite(LED1, LOW);
+          digitalWrite(LAMP, LOW);
         } else if(brightness > 122) {
-          digitalWrite(LED1, HIGH);
+          digitalWrite(LAMP, HIGH);
         } else {
-          analogWrite(LED1,  brightness);
+          analogWrite(LAMP,  brightness);
         }
 }
 
@@ -151,7 +167,7 @@ void startOTA() { // Start the OTA service
 
   ArduinoOTA.onStart([]() {
     Serial.println("Start");
-    digitalWrite(LED1, LOW);
+    digitalWrite(LAMP, LOW);
   });
   ArduinoOTA.onEnd([]() {
     Serial.println("\r\nEnd");
@@ -293,7 +309,6 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       if (payload[0] == '#') {            // we get brightness data
         uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
         brightness =          val & 0x3FF;                      // B: bits  0-9
-        //state = "SHINE";
         }
         else if (payload[0] == 'S') {
           state = "SHINE";

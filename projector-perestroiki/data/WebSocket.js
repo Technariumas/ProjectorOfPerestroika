@@ -8,6 +8,7 @@ connection.onerror = function (error) {
 };
 connection.onmessage = function (e) {  
     console.log('Server: ', e.data);
+    parseVoltage(e.data);
 };
 connection.onclose = function(){
     console.log('WebSocket connection closed');
@@ -69,3 +70,33 @@ function setBlinkRate() {
 		console.log('Sending value: ' + str); 
 		connection.send(str);
 }
+
+function parseVoltage(voltage) {
+		val = parseInt(voltage);
+		if (val < 4) {
+			warnVoltage();
+			showVoltage(voltage);
+			}
+		else if (val < 3.8) {
+			warnVoltage();
+			showVoltage(voltage);
+			}
+		else {
+			clearVoltage();
+			showVoltage(voltage);
+			}		
+}
+
+function showVoltage(voltage) {
+	document.getElementById('voltage').innerHTML = "<p>"+voltage+"</p>";
+	}
+
+function warnVoltage() {
+	document.getElementById('voltage').style.backgroundColor = '#FF0000';
+	document.getElementById('voltage').innerHTML = "<p>Battery critically low. The system will shut down immediately.</p> <p>"+voltage+"</p>";
+	}
+
+	
+function clearVoltage() {
+	document.getElementById('voltage').style.backgroundColor = '#FFFFFF';
+	}		

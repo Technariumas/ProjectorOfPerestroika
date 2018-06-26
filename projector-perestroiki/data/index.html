@@ -18,10 +18,11 @@
             <h1>PROJECTOR CONTROL</h1>
         </header>
         <div>
+			    <div id="voltage"></div>
             <table>
                 <tr>
                     <td style="width:14.4px; text-align: right">Dim: </td>
-                    <td><input class="enabled" id="dimmer" type="range" min="0" max="122" step="1" oninput="useDimmer();" value="0"></td>
+                    <td><input class="enabled" id="dimmer" type="range" min="3" max="122" step="1" oninput="useDimmer();" value="0"></td>
                 </tr>
             </table>
             <p style="margin:8px 0px"><button id="offButton" class="button" style="background-color:#999" onclick="preheat();">Off</button>
@@ -34,7 +35,7 @@
                   <td><input class="enabled" id="blinkMax" type="range" min="0" max="100" step="1" oninput="setBlinkMax();" value="0"></td>
 			</tr>
 			<tr>		
-					<td style="width:14.4px; text-align: right">Blink rate: </td>
+					<td style="width:14.4px; text-align: right">Blink delay: </td>
                   <td><input class="enabled" id="blinkRate" type="range" min="10" max="100" step="1" oninput="setBlinkRate();" value="0"></td>
             </tr>
             </table>
