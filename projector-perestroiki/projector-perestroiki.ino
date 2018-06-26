@@ -19,7 +19,8 @@ const char *password = "perestroika";   // The password required to connect to i
 
 const char *OTAName = "KREDENCAS";           // A name and a password for the OTA service
 const char *OTAPassword = "ledinis";
-#define LAMP D0
+#define LAMP D1
+
 // define directions for LED fade
 #define UP 0
 #define DOWN 1
@@ -38,8 +39,6 @@ void startServer();
 void setup() {
   pinMode(LAMP, OUTPUT);    // the pins with LEDs connected are outputs
   digitalWrite(LAMP, LOW);
-  pinMode(D0, OUTPUT);
-  digitalWrite(D0, LOW);
   pinMode(D3, INPUT_PULLUP);
   Serial.begin(115200);        // Start the Serial communication to send messages to the computer
   delay(10);
@@ -63,7 +62,7 @@ void setup() {
 }
 const int preheatValue = 3;
 int maxBrightness = 122;
-int brightness = 122;
+int brightness = 3;
 int blinkRate = 50;
 String state = "OFF";
 unsigned long prevMillis = millis();
@@ -73,20 +72,22 @@ void loop() {
   webSocket.loop();                           // constantly check for websocket events
   server.handleClient();                      // run the server
   ArduinoOTA.handle();                        // listen for OTA events
-  if(millis() > prevMillis + 3000) { 
-    voltage = 4*(5.0 / 1023.0)*analogRead(A0);
+   //startPreheat();
+  //Serial.println(preheatValue);
+  if(millis() > prevMillis + 5000) { 
+    voltage = 4*(3.8 / 1023.0)*analogRead(A0);
     String payload = String(voltage);
     webSocket.sendTXT(0, payload);    
-    if (voltage < 3) {
-    state = "LOW";
-    }
+    //if (voltage < 3) {
+    //state = "LOW";
+    //}
     prevMillis = millis();
   }
   if (state == "OFF") {
     startPreheat();
   }
   else if (state == "LOW") {
-    shine(0);
+    shine(preheatValue);
     }
   else if (state == "SHINE") {
     startShine();
@@ -97,6 +98,7 @@ void loop() {
   else {
     Serial.println("Error");
     }
+ 
  }
 
 void startPreheat() {
