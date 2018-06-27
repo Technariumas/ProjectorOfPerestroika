@@ -59,12 +59,34 @@ String state = "OFF";
 unsigned long prevMillis = millis();
 int pos = 0;
 
+String filename="play.txt";
+
+
+
 void loop() {
   webSocket.loop();                           // constantly check for websocket events
   server.handleClient();                      // run the server
+  File f = SPIFFS.open("/play.txt", "r");
+  if (!f) {
+    Serial.println("file open failed");
+  }
+  //while(forg.available()) 
+  f.seek(pos, SeekSet);
+  delay(2000);
+  //float res = f.parseFloat();
+  String res = f.readBytes(',');
+  unsigned int len = res.length();
+  float r = res.toFloat();
+  Serial.print(pos);
+  Serial.print(", ");
+  Serial.print(len);
+  Serial.print(", ");
+  Serial.println(r);
+  pos+=len;
+  f.close();  
   if(millis() > prevMillis + 5000) { 
     voltage = 4*analogRead(A0)*(3.8 / 1023.0);
-    Serial.println(voltage);
+    //Serial.println(voltage);
     String payload = String(voltage);
     webSocket.sendTXT(0, payload);    
     if (voltage < 3) {
@@ -132,25 +154,6 @@ void startWiFi() { // Start a Wi-Fi access point, and try to connect to some giv
         Serial.println("WiFi FAIL!!!");
         return;
   }
-
-//  wifiMulti.addAP("TECHNARIUM", "user23422");   // add Wi-Fi networks you want to connect to
-//  wifiMulti.addAP("ssid_from_AP_2", "your_password_for_AP_2");
-//  wifiMulti.addAP("ssid_from_AP_3", "your_password_for_AP_3");
-
-//  Serial.println("Connecting");
-//  while (wifiMulti.run() != WL_CONNECTED && WiFi.softAPgetStationNum() < 1) {  // Wait for the Wi-Fi to connect
-//    delay(250);
-//    Serial.print('.');
-//  }
-//  Serial.println("\r\n");
-//  if(WiFi.softAPgetStationNum() == 0) {      // If the ESP is connected to an AP
-//    Serial.print("Connected to ");
-//    Serial.println(WiFi.SSID());             // Tell us what network we're connected to
-//    Serial.print("IP address:\t");
-//    Serial.print(WiFi.localIP());            // Send the IP address of the ESP8266 to the computer
-//  } else {                                   // If a station is connected to the ESP SoftAP
-//    Serial.print("Station connected to ESP8266 AP");
-//  }
   Serial.println("\r\n");
 }
 
@@ -200,7 +203,6 @@ void startServer() { // Start a HTTP server with a file read handler and an uplo
   server.begin();                             // start the HTTP server
   Serial.println("HTTP server started.");
 }
-
 
 
 bool handleFileRead(String path);
