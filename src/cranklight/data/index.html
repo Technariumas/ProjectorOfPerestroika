@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Projector control</title>
+    <link href='main.css' rel='stylesheet' type='text/css'>
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="144x144"  href="/favicon-144x144.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon.ico">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#00878f">
+    <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport'>
+    <script src="WebSocket.js" type="text/javascript"></script>
+</head>
+
+<body>
+    <center>
+        <header>
+            <h1>PROJECTOR CONTROL</h1>
+        </header>
+        <div>
+			    <div id="voltage"></div>
+            <p style="margin:8px 0px"><button id="offButton" class="button" style="background-color:#999" onclick="preheat();">Off</button>
+            <button id="playButton" class="button" style="background-color:#999" onclick="play();">Play</button>
+            <button id="pauseButton" class="button" style="background-color:#999" onclick="pause();">Pause</button></p>
+        
+            <table>
+            <tr>
+                  <td style="width:14.4px; text-align: right">Max. blink brightness: </td>
+                  <td><input class="enabled" id="blinkMax" type="range" min="0" max="100" step="1" oninput="setBlinkMax();" value="0"></td>
+			</tr>
+			<tr>		
+					<td style="width:14.4px; text-align: right">Blink randomness: </td>
+                  <td><input class="enabled" id="blinkRandomness" type="range" min="10" max="100" step="1" oninput="setBlinkRandomness();" value="0"></td>
+            </tr>
+            </table>
+        
+        </div>
+    </center>
+</body>
+</html>

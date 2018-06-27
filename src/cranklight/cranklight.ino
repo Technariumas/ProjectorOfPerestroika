@@ -17,6 +17,8 @@ const char *ssid = "cranklight0"; // The name of the Wi-Fi network that will be 
 const char *password = "crank";   // The password required to connect to it, leave blank for an open network
 
 #define LAMP D1
+#define UP 0
+#define DOWN 1
 
 float voltage = 0;
 int sleepTime = 5;  //change to 5 minutes
@@ -55,43 +57,24 @@ const int preheatValue = 3;
 int maxBrightness = 3;
 int brightness = preheatValue;
 int blinkRate = 50;
+int timeStep = 500;
+int brightnessStep = 5;
 String state = "OFF";
 unsigned long prevMillis = millis();
-int pos = 0;
-
-String filename="play.txt";
-
-
+unsigned long previousMillis = 0;
+byte fadeDirection = UP;
 
 void loop() {
   webSocket.loop();                           // constantly check for websocket events
   server.handleClient();                      // run the server
-  File f = SPIFFS.open("/play.txt", "r");
-  if (!f) {
-    Serial.println("file open failed");
-  }
-  //while(forg.available()) 
-  f.seek(pos, SeekSet);
-  delay(2000);
-  //float res = f.parseFloat();
-  String res = f.readBytes(',');
-  unsigned int len = res.length();
-  float r = res.toFloat();
-  Serial.print(pos);
-  Serial.print(", ");
-  Serial.print(len);
-  Serial.print(", ");
-  Serial.println(r);
-  pos+=len;
-  f.close();  
   if(millis() > prevMillis + 5000) { 
     voltage = 4*analogRead(A0)*(3.8 / 1023.0);
     //Serial.println(voltage);
     String payload = String(voltage);
     webSocket.sendTXT(0, payload);    
-    if (voltage < 3) {
-    state = "LOW";
-    }
+    //if (voltage < 3) {
+    //state = "LOW";
+    //}
     prevMillis = millis();
   }
   if (state == "OFF") {
@@ -102,11 +85,33 @@ void loop() {
     ESP.deepSleep(1000000*sleepTime); 
     }
   else if (state == "PAUSE") {
-    startShine();
+    shine(brightness);
     }
   else if (state == "PLAY") {
-    play();
-  }
+      unsigned long currentMillis = millis();
+      int currentBrightness = brightness;
+      if (currentMillis - previousMillis >= timeStep) {
+         // save the last time you blinked the LED
+         previousMillis = currentMillis;
+         brightness = currentBrightness - brightnessStep;
+         Serial.println(brightness);
+
+       if(brightness < 30) {
+          fadeDirection = UP;
+          shine(30);
+       }
+       if (fadeDirection == UP) {
+        Serial.println("changing");
+        while(brightness < 120) {
+            brightness = brightness + brightnessStep;
+            shine(brightness); 
+            Serial.println(brightness);
+            delay(2);
+            }  
+         fadeDirection = DOWN; 
+        }  
+        }
+  } 
   else {
     Serial.println("Error");
     }
@@ -115,24 +120,11 @@ void loop() {
 
 
 void startPreheat() {
+  brightness = 30;
+  fadeDirection = UP;
   digitalWrite(LAMP, LOW);
   }
-
-void startShine() {
-    shine(brightness);
-  }
-
-void play() {
-    int v = 22 + random(maxBrightness);
-    shine(v);
-    //Serial.println("Blinking");
-    //Serial.println(blinkRate);
-    for(int i = 0; i < random(blinkRate); i++){
-      delay(10);
-      webSocket.loop();
-    }
-  }
-  
+ 
 
 void shine(int brightness) {
           if(brightness < 3) {
@@ -280,11 +272,11 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
         brightness =          val & 0x3FF;                      // B: bits  0-9
         }
-        else if (payload[0] == 'S') {
-          state = "SHINE";
+        else if (payload[0] == 'P') {
+          state = "PAUSE";
         }
         else if (payload[0] == 'B') {
-          state = "BLINK";
+          state = "PLAY";
         }
         else if (payload[0] == '*') {                      // the browser sends a * when the flicker effect is enabled
         uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
