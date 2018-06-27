@@ -31,6 +31,7 @@ void startMDNS();
 void startServer();
 
 void setup() {
+  randomSeed(3);
   pinMode(LAMP, OUTPUT);    // the pins with LEDs connected are outputs
   digitalWrite(LAMP, LOW);
   pinMode(A0, INPUT_PULLUP);
@@ -94,18 +95,17 @@ void loop() {
          // save the last time you blinked the LED
          previousMillis = currentMillis;
          brightness = currentBrightness - brightnessStep;
-         Serial.println(brightness);
+         Serial.println(random(10));
 
        if(brightness < 30) {
           fadeDirection = UP;
           shine(30);
        }
        if (fadeDirection == UP) {
-        Serial.println("changing");
         while(brightness < 120) {
             brightness = brightness + brightnessStep;
             shine(brightness); 
-            Serial.println(brightness);
+            //Serial.println(brightness);
             delay(2);
             }  
          fadeDirection = DOWN; 
@@ -121,6 +121,7 @@ void loop() {
 
 void startPreheat() {
   brightness = 30;
+  randomSeed(3);
   fadeDirection = UP;
   digitalWrite(LAMP, LOW);
   }
