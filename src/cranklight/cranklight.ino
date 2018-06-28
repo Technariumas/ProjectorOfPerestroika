@@ -21,9 +21,9 @@ const char *password = "crank";   // The password required to connect to it, lea
 #define DOWN 1
 
 float voltage = 0;
-int sleepTime = 30;  //change to 5 minutes
+int sleepTime = 10;  //change to 5 minutes
 
-const char* mdnsName = "projector"; // Domain name for the mDNS responder
+const char* mdnsName = "cranklight0"; // Domain name for the mDNS responder
 void startWiFi();
 void startSPIFFS();               
 void startWebSocket();            
@@ -55,11 +55,13 @@ void setup() {
   
 }
 const int preheatValue = 25;
-int minBrightness = 100;
-int maxBrightness = minBrightness+10;
-int brightness = preheatValue;
-int blinkRate = 50;
-int timeStep = 500;
+int minBrightness = preheatValue;
+int maxBrightness = 500;
+int brightness = maxBrightness;
+int timeStep = 3;
+int randomStep = 10;
+int blinkRandomness = 0;
+int maxBrightnessLimit = 955;
 int brightnessStep = 5;
 String state = "OFF";
 unsigned long prevMillis = millis();
@@ -71,13 +73,12 @@ void loop() {
   server.handleClient();                      // run the server
   if(millis() > prevMillis + 5000) { 
     voltage = 4*(analogRead(A0)/1023.0);
-    Serial.println(voltage);
-    Serial.println(analogRead(A0));
     String payload = String(voltage);
     webSocket.sendTXT(0, payload);    
-    //if (voltage < 3.6) {
-    //state = "LOW";
-    //}
+    if (voltage < 0.80) {
+    state = "LOW";
+    }
+    Serial.println(voltage);
     prevMillis = millis();
   }
   if (state == "OFF") {
@@ -94,23 +95,28 @@ void loop() {
       unsigned long currentMillis = millis();
       int currentBrightness = brightness;
       if (currentMillis - previousMillis >= timeStep) {
-        Serial.println(fadeDirection);
-         // save the last time you blinked the LED
          previousMillis = currentMillis;
+         //Serial.println(blinkRandomness);
+        Serial.println(blinkRandomness*random(randomStep));
          if (fadeDirection == DOWN) {
-         brightness = currentBrightness - brightnessStep;
-         //Serial.println(random(10));
-        Serial.println(brightness);
+         brightness = brightness - brightnessStep;
+         shine(brightness);
+           /* Serial.print(minBrightness);
+            Serial.print(",");
+            Serial.print(brightness);
+            Serial.print(",");
+            Serial.println(maxBrightness);*/
+
          }
        if(brightness < minBrightness) {
           fadeDirection = UP;
+          Serial.println("changing");
           shine(minBrightness);
        }
        if (fadeDirection == UP) {
         while(brightness < maxBrightness) {
             brightness = brightness + brightnessStep;
             shine(brightness); 
-            Serial.println(brightness);
             delay(2);
             }  
          fadeDirection = DOWN; 
@@ -123,20 +129,22 @@ void loop() {
  
  }
 
+int getRandomDelay() {
+  return timeStep+blinkRandomness*random(randomStep);
+  }
 
 void startPreheat() {
   brightness = minBrightness;
   randomSeed(3);
   fadeDirection = UP;
-  shine(preheatValue);
-  //analogWrite(LAMP, preheatValue); // check if replacing from digitalWrite!!!
+  digitalWrite(LAMP, LOW); 
   }
  
 
 void shine(int brightness) {
           if(brightness < preheatValue) {
           digitalWrite(LAMP, LOW);
-        } else if(brightness > 900) {
+        } else if(brightness > maxBrightnessLimit) {
           digitalWrite(LAMP, HIGH);
         } else {
           analogWrite(LAMP,  brightness);
@@ -285,9 +293,13 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
         maxBrightness =          val & 0x3FF;                      // B: bits  0-9
       }
+        else if (payload[0] == '#') {                      // the browser sends a * when the flicker effect is enabled
+        uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
+        minBrightness =          val & 0x3FF;                      // B: bits  0-9
+      }
       else if (payload[0] == '_') {                      // the browser sends a * when the flicker effect is enabled
         uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
-        blinkRate =          val & 0x3FF;                      // B: bits  0-9
+        blinkRandomness =          val & 0x3FF;                      // B: bits  0-9
       }
        else if (payload[0] == 'O') {                      // the browser sends an O when the preheat mode is on
         state = "OFF";
