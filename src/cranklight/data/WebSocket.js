@@ -54,6 +54,13 @@ function setBlinkMax() {
 		connection.send(str);
 }
 
+function setBlinkMin() {
+   		var b = parseInt(document.getElementById('blinkMin').value);
+		var str = '#'+ b.toString(16);    
+		console.log('Sending value: ' + str); 
+		connection.send(str);
+}
+
 function setBlinkRandomness() {
    		var b = parseInt(document.getElementById('blinkRandomness').value);
 		var str = '_'+ b.toString(16);    
@@ -64,7 +71,7 @@ function setBlinkRandomness() {
 function parseVoltage(voltage) {
 		
 		var val = Number(voltage);
-		if (val < 3.1) {
+		if (val < 0.83) {
 			warnVoltage(voltage);
 			}
 		else {
@@ -74,12 +81,12 @@ function parseVoltage(voltage) {
 }
 
 function showVoltage(voltage) {
-	document.getElementById('voltage').innerHTML = "<p>Voltage: "+voltage+" V</p>";
+	document.getElementById('voltage').innerHTML = "<p>Battery level: "+voltage+"</p>";
 	}
 
 function warnVoltage(voltage) {
 	document.getElementById('voltage').style.backgroundColor = '#FF0000';
-	document.getElementById('voltage').innerHTML = "<p>Battery critically low. The system will shut down immediately.</p> <p>Voltage: "+voltage+" V</p>";
+	document.getElementById('voltage').innerHTML = "<p>Battery critically low. The system will shut down soon.</p> <p>Battery level: "+voltage+"</p>";
 	}
 
 	
