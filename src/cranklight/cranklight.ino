@@ -21,7 +21,7 @@ const char *password = "crank";   // The password required to connect to it, lea
 #define DOWN 1
 
 float voltage = 0;
-int sleepTime = 5;  //change to 5 minutes
+int sleepTime = 30;  //change to 5 minutes
 
 const char* mdnsName = "projector"; // Domain name for the mDNS responder
 void startWiFi();
@@ -40,7 +40,7 @@ void setup() {
   Serial.println("\r\n");
 
   analogWriteFreq(20000);
-  analogWriteRange(127);
+  //analogWriteRange(1023);
   
   startWiFi();                 // Start a Wi-Fi access point, and try to connect to some given access points. Then wait for either an AP or STA connection
   
@@ -54,8 +54,9 @@ void setup() {
   startServer();               // Start a HTTP server with a file read handler and an upload handler
   
 }
-const int preheatValue = 3;
-int maxBrightness = 3;
+const int preheatValue = 25;
+int minBrightness = 100;
+int maxBrightness = minBrightness+10;
 int brightness = preheatValue;
 int blinkRate = 50;
 int timeStep = 500;
@@ -69,11 +70,12 @@ void loop() {
   webSocket.loop();                           // constantly check for websocket events
   server.handleClient();                      // run the server
   if(millis() > prevMillis + 5000) { 
-    voltage = 4*analogRead(A0)*(3.8 / 1023.0);
-    //Serial.println(voltage);
+    voltage = 4*(analogRead(A0)/1023.0);
+    Serial.println(voltage);
+    Serial.println(analogRead(A0));
     String payload = String(voltage);
     webSocket.sendTXT(0, payload);    
-    //if (voltage < 3) {
+    //if (voltage < 3.6) {
     //state = "LOW";
     //}
     prevMillis = millis();
@@ -92,20 +94,23 @@ void loop() {
       unsigned long currentMillis = millis();
       int currentBrightness = brightness;
       if (currentMillis - previousMillis >= timeStep) {
+        Serial.println(fadeDirection);
          // save the last time you blinked the LED
          previousMillis = currentMillis;
+         if (fadeDirection == DOWN) {
          brightness = currentBrightness - brightnessStep;
-         Serial.println(random(10));
-
-       if(brightness < 30) {
+         //Serial.println(random(10));
+        Serial.println(brightness);
+         }
+       if(brightness < minBrightness) {
           fadeDirection = UP;
-          shine(30);
+          shine(minBrightness);
        }
        if (fadeDirection == UP) {
-        while(brightness < 120) {
+        while(brightness < maxBrightness) {
             brightness = brightness + brightnessStep;
             shine(brightness); 
-            //Serial.println(brightness);
+            Serial.println(brightness);
             delay(2);
             }  
          fadeDirection = DOWN; 
@@ -120,17 +125,18 @@ void loop() {
 
 
 void startPreheat() {
-  brightness = 30;
+  brightness = minBrightness;
   randomSeed(3);
   fadeDirection = UP;
-  digitalWrite(LAMP, LOW);
+  shine(preheatValue);
+  //analogWrite(LAMP, preheatValue); // check if replacing from digitalWrite!!!
   }
  
 
 void shine(int brightness) {
-          if(brightness < 3) {
+          if(brightness < preheatValue) {
           digitalWrite(LAMP, LOW);
-        } else if(brightness > 122) {
+        } else if(brightness > 900) {
           digitalWrite(LAMP, HIGH);
         } else {
           analogWrite(LAMP,  brightness);
@@ -269,11 +275,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       break;
     case WStype_TEXT:                     // if new text data is received
       Serial.printf("[%u] get Text: %s\n", num, payload);
-      if (payload[0] == '#') {            // we get brightness data
-        uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
-        brightness =          val & 0x3FF;                      // B: bits  0-9
-        }
-        else if (payload[0] == 'P') {
+      if (payload[0] == 'P') {
           state = "PAUSE";
         }
         else if (payload[0] == 'B') {
