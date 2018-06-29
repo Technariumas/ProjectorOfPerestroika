@@ -59,6 +59,7 @@ int minBrightness = preheatValue;
 int maxBrightness = 500;
 int brightness = maxBrightness;
 int timeStep = 3;
+int blinkSpeed = timeStep;
 int randomStep = 5;
 int blinkRandomness = 0;
 int maxBrightnessLimit = 955;
@@ -109,10 +110,10 @@ void loop() {
          }
          }
        if(brightness < minBrightness) {
+          yield();
           fadeDirection = UP;
-          Serial.println("changing");
           shine(minBrightness);
-          timeStep = 3 + random(blinkRandomness);
+          timeStep = blinkSpeed + random(blinkRandomness);
           Serial.println(timeStep);
       }
        if (fadeDirection == UP) {
@@ -298,6 +299,10 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         else if (payload[0] == '#') {                      // the browser sends a * when the flicker effect is enabled
         uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
         minBrightness =          val & 0x3FF;                      // B: bits  0-9
+      }
+        else if (payload[0] == '^') {                      // the browser sends a * when the flicker effect is enabled
+        uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
+        blinkSpeed =          val & 0x3FF;                      // B: bits  0-9
       }
       else if (payload[0] == '_') {                      // the browser sends a * when the flicker effect is enabled
         uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data

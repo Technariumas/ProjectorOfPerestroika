@@ -68,6 +68,16 @@ function setBlinkRandomness() {
 		connection.send(str);
 }
 
+
+
+function setBlinkSpeed() {
+   		var b = parseInt(document.getElementById('blinkSpeed').value);
+		var str = '^'+ b.toString(16);    
+		console.log('Sending value: ' + str); 
+		connection.send(str);
+}
+
+
 function parseVoltage(voltage) {
 		
 		var val = Number(voltage);

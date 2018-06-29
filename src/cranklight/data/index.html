@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Projector control</title>
+    <title>Crank light 1</title>
     <link href='main.css' rel='stylesheet' type='text/css'>
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png">
     <link rel="icon" type="image/png" sizes="144x144"  href="/favicon-144x144.png">
@@ -15,7 +15,7 @@
 <body>
     <center>
         <header>
-            <h1>Crank light Control</h1>
+            <h1>Crank light 1</h1>
         </header>
 			    <div id="voltage"></div>
             <p style="margin:8px 0px"><button id="offButton" class="button" style="background-color:#999" onclick="preheat();">Off</button>
@@ -31,6 +31,10 @@
             <tr>
                   <td style="width:14.4px; text-align: right">Min. blink brightness: </td>
                   <td><input class="enabled" id="blinkMin" type="range" min="30" max="499" step="1" oninput="setBlinkMin();" value="0"></td>
+			</tr>
+			<tr>
+                  <td style="width:14.4px; text-align: right">Blinking step: </td>
+                  <td><input class="enabled" id="blinkSpeed" type="range" min="1" max="5" step="1" oninput="setBlinkSpeed();" value="0"></td>
 			</tr>
 			<tr>		
 					<td style="width:14.4px; text-align: right">Blink randomness: </td>
