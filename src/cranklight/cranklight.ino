@@ -1,8 +1,9 @@
+#include <FS.h>
+#include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiMulti.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
-#include <FS.h>
 #include <WebSocketsServer.h>
 
 ESP8266WiFiMulti wifiMulti;       // Create an instance of the ESP8266WiFiMulti class, called 'wifiMulti'
@@ -19,7 +20,7 @@ const char *password = "crank";   // The password required to connect to it, lea
 #define LAMP D1
 #define UP 0
 #define DOWN 1
-
+#define settingsFile  "/settings.json"
 float voltage = 0;
 int sleepTime = 10;  //change to 5 minutes
 
@@ -68,6 +69,8 @@ String state = "OFF";
 unsigned long prevMillis = millis();
 unsigned long previousMillis = 0;
 byte fadeDirection = UP;
+int loadedMaxBrightness = 0;
+
 
 void loop() {
   webSocket.loop();                           // constantly check for websocket events
@@ -81,6 +84,29 @@ void loop() {
     }
     Serial.println(voltage);
     prevMillis = millis();
+  }
+   // parse json config file
+  File jsonFile = SPIFFS.open(settingsFile, "r");
+  if (jsonFile) {
+    // Allocate a buffer to store contents of the file.
+    const size_t bufferSize = JSON_OBJECT_SIZE(4) + 80;
+    DynamicJsonBuffer jsonBuffer(bufferSize);
+
+  const char* json = "{\"maxBrightness\":20,\"minBrightness\":50,\"blinkSpeed\":20,\"blinkRandomness\":2}";
+
+JsonObject& root = jsonBuffer.parseObject(json);
+
+loadedMaxBrightness = root["maxBrightness"]; // 20
+//int minBrightness = root["minBrightness"]; // 50
+//int blinkSpeed = root["blinkSpeed"]; // 20
+//int blinkRandomness = root["blinkRandomness"]; // 2
+    if (root.success()) {
+      Serial.println(loadedMaxBrightness);
+    } 
+    else {
+      Serial.println("failed to load json config");
+    }
+    jsonFile.close();
   }
   if (state == "OFF") {
     startPreheat();
