@@ -74,7 +74,8 @@ int loadedMaxBrightness = 0;
 
 void loop() {
   webSocket.loop();                           // constantly check for websocket events
-  server.handleClient();                      // run the server
+  server.handleClient();
+  saveSettings();
   if(millis() > prevMillis + 5000) { 
     voltage = 4*(analogRead(A0)/1023.0);
     String payload = String(voltage);
@@ -82,32 +83,11 @@ void loop() {
     if (voltage < 0.80) {
     state = "LOW";
     }
+    Serial.println(analogRead(A0));
     Serial.println(voltage);
     prevMillis = millis();
   }
-   // parse json config file
-  File jsonFile = SPIFFS.open(settingsFile, "r");
-  if (jsonFile) {
-    // Allocate a buffer to store contents of the file.
-    const size_t bufferSize = JSON_OBJECT_SIZE(4) + 80;
-    DynamicJsonBuffer jsonBuffer(bufferSize);
 
-  const char* json = "{\"maxBrightness\":20,\"minBrightness\":50,\"blinkSpeed\":20,\"blinkRandomness\":2}";
-
-JsonObject& root = jsonBuffer.parseObject(json);
-
-loadedMaxBrightness = root["maxBrightness"]; // 20
-//int minBrightness = root["minBrightness"]; // 50
-//int blinkSpeed = root["blinkSpeed"]; // 20
-//int blinkRandomness = root["blinkRandomness"]; // 2
-    if (root.success()) {
-      Serial.println(loadedMaxBrightness);
-    } 
-    else {
-      Serial.println("failed to load json config");
-    }
-    jsonFile.close();
-  }
   if (state == "OFF") {
     startPreheat();
   }
@@ -140,7 +120,7 @@ loadedMaxBrightness = root["maxBrightness"]; // 20
           fadeDirection = UP;
           shine(minBrightness);
           timeStep = blinkSpeed + random(blinkRandomness);
-          Serial.println(timeStep);
+          //Serial.println(timeStep);
       }
        if (fadeDirection == UP) {
         while(brightness < maxBrightness) {
@@ -158,9 +138,42 @@ loadedMaxBrightness = root["maxBrightness"]; // 20
  
  }
 
-int getRandomDelay() {
-  return timeStep+blinkRandomness*random(randomStep);
+void loadSettings() {
+  // parse json config file
+  File jsonFile = SPIFFS.open(settingsFile, "r");
+  if (jsonFile) {
+    // Allocate a buffer to store contents of the file.
+    const size_t bufferSize = JSON_OBJECT_SIZE(4) + 80;
+    DynamicJsonBuffer jsonBuffer(bufferSize);
+    JsonObject& root = jsonBuffer.parseObject(jsonFile);
+
+  loadedMaxBrightness = root["maxBrightness"]; // 20
+  //int minBrightness = root["minBrightness"]; // 50
+  //int blinkSpeed = root["blinkSpeed"]; // 20
+  //int blinkRandomness = root["blinkRandomness"]; // 2
+  if (root.success()) {
+      Serial.println(loadedMaxBrightness);
+   yield();
+   } 
+    else {
+      Serial.println("failed to load json config");
+    }
+    jsonFile.close();
   }
+  }
+
+void saveSettings() {
+    const size_t bufferSize = JSON_OBJECT_SIZE(4) + 80;
+    StaticJsonBuffer<bufferSize> jsonBuffer;
+    JsonObject& json = jsonBuffer.createObject();
+    json["maxBrightness"] = 0;
+    File jsonFile = SPIFFS.open(settingsFile, "w");
+    if (!jsonFile) {
+      Serial.println("Failed to open config file for writing");
+    }
+  json.printTo(jsonFile);
+  jsonFile.close();
+}
 
 void startPreheat() {
   brightness = minBrightness;
