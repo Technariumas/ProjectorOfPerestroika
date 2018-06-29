@@ -59,7 +59,7 @@ int minBrightness = preheatValue;
 int maxBrightness = 500;
 int brightness = maxBrightness;
 int timeStep = 3;
-int randomStep = 10;
+int randomStep = 5;
 int blinkRandomness = 0;
 int maxBrightnessLimit = 955;
 int brightnessStep = 5;
@@ -97,7 +97,6 @@ void loop() {
       if (currentMillis - previousMillis >= timeStep) {
          previousMillis = currentMillis;
          //Serial.println(blinkRandomness);
-        Serial.println(blinkRandomness*random(randomStep));
          if (fadeDirection == DOWN) {
          brightness = brightness - brightnessStep;
          shine(brightness);
@@ -108,19 +107,22 @@ void loop() {
             Serial.println(maxBrightness);*/
 
          }
+         }
        if(brightness < minBrightness) {
           fadeDirection = UP;
           Serial.println("changing");
           shine(minBrightness);
-       }
+          timeStep = 3 + random(blinkRandomness);
+          Serial.println(timeStep);
+      }
        if (fadeDirection == UP) {
         while(brightness < maxBrightness) {
             brightness = brightness + brightnessStep;
             shine(brightness); 
             delay(2);
+            yield();
             }  
          fadeDirection = DOWN; 
-        }  
         }
   } 
   else {
