@@ -38,6 +38,16 @@ function play(){
     //document.getElementById('dimmer').disabled = true; 
 }
 
+function saveSettings(){
+	connection.send("S");
+	alert("saved");
+}
+
+function loadSettings(){
+	connection.send("L");
+	alert("loaded");
+}
+
 function pause(){
 	connection.send("P");
     document.getElementById('offButton').style.backgroundColor = '#999';
@@ -79,7 +89,6 @@ function setBlinkSpeed() {
 
 
 function parseVoltage(voltage) {
-		
 		var val = Number(voltage);
 		if (val < 0.83) {
 			warnVoltage(voltage);

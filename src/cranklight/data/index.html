@@ -18,9 +18,11 @@
             <h1>Crank light 1</h1>
         </header>
 			    <div id="voltage"></div>
-            <p style="margin:8px 0px"><button id="offButton" class="button" style="background-color:#999" onclick="preheat();">Off</button>
+            <p style="margin:8px 0px">
+			<button id="offButton" class="button" style="background-color:#999" onclick="preheat();">Off</button>
             <button id="playButton" class="button" style="background-color:#999" onclick="play();">Play</button>
-            <button id="pauseButton" class="button" style="background-color:#999" onclick="pause();">Pause</button></p>
+            <button id="pauseButton" class="button" style="background-color:#999" onclick="pause();">Pause</button>
+            </p>
         
             <table>
 			<tr>
@@ -41,7 +43,10 @@
                   <td><input class="enabled" id="blinkRandomness" type="range" min="0" max="10" step="1" oninput="setBlinkRandomness();" value="0"></td>
             </tr>
             </table>
-        
+            <p style="margin:8px 0px">
+            <button id="saveButton" class="button" style="background-color:#999" onclick="saveSettings();">Save</button>
+            <button id="loadButton" class="button" style="background-color:#999" onclick="loadSettings();">Load</button>
+            </p>
         </div>
     </center>
 </body>

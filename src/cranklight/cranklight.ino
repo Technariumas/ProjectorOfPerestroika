@@ -75,7 +75,6 @@ int loadedMaxBrightness = 0;
 void loop() {
   webSocket.loop();                           // constantly check for websocket events
   server.handleClient();
-  saveSettings();
   if(millis() > prevMillis + 5000) { 
     voltage = 4*(analogRead(A0)/1023.0);
     String payload = String(voltage);
@@ -147,12 +146,12 @@ void loadSettings() {
     DynamicJsonBuffer jsonBuffer(bufferSize);
     JsonObject& root = jsonBuffer.parseObject(jsonFile);
 
-  loadedMaxBrightness = root["maxBrightness"]; // 20
-  //int minBrightness = root["minBrightness"]; // 50
-  //int blinkSpeed = root["blinkSpeed"]; // 20
-  //int blinkRandomness = root["blinkRandomness"]; // 2
+  maxBrightness = root["maxBrightness"]; 
+  minBrightness = root["minBrightness"]; 
+  blinkSpeed = root["blinkSpeed"]; 
+  blinkRandomness = root["blinkRandomness"]; 
   if (root.success()) {
-      Serial.println(loadedMaxBrightness);
+      Serial.println("Settings loaded");
    yield();
    } 
     else {
@@ -165,13 +164,20 @@ void loadSettings() {
 void saveSettings() {
     const size_t bufferSize = JSON_OBJECT_SIZE(4) + 80;
     StaticJsonBuffer<bufferSize> jsonBuffer;
-    JsonObject& json = jsonBuffer.createObject();
-    json["maxBrightness"] = 0;
+    JsonObject& root = jsonBuffer.createObject();
+    root["maxBrightness"] = maxBrightness;
+    root["minBrightness"] = minBrightness;
+    root["blinkSpeed"] = blinkSpeed;
+    root["blinkRandomness"] = blinkRandomness;
     File jsonFile = SPIFFS.open(settingsFile, "w");
-    if (!jsonFile) {
-      Serial.println("Failed to open config file for writing");
+     root.printTo(jsonFile);
+    if (root.success()) {
+      Serial.println("Settings saved");
+   yield();
+   } 
+    else {
+      Serial.println("failed to save json config");
     }
-  json.printTo(jsonFile);
   jsonFile.close();
 }
 
@@ -331,6 +337,12 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         else if (payload[0] == 'B') {
           state = "PLAY";
         }
+      if (payload[0] == 'L') {
+          loadSettings();
+        }
+        else if (payload[0] == 'S') {
+          saveSettings();
+        }        
         else if (payload[0] == '*') {                      // the browser sends a * when the flicker effect is enabled
         uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
         maxBrightness =          val & 0x3FF;                      // B: bits  0-9
