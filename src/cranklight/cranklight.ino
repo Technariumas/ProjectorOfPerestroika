@@ -77,7 +77,7 @@ void loop() {
   server.handleClient();
   if(millis() > prevMillis + 5000) { 
     voltage = 4*(analogRead(A0)/1023.0);
-    String payload = String(voltage);
+    String payload = "v_"+String(voltage);
     webSocket.sendTXT(0, payload);    
     if (voltage < 0.80) {
     state = "LOW";
@@ -152,6 +152,14 @@ void loadSettings() {
   blinkRandomness = root["blinkRandomness"]; 
   if (root.success()) {
       Serial.println("Settings loaded");
+      String payload = "maxB_"+String(maxBrightness);
+      webSocket.sendTXT(0, payload); 
+      payload = "minB_"+String(minBrightness);
+      webSocket.sendTXT(0, payload); 
+      payload = "bS_"+String(blinkSpeed);
+      webSocket.sendTXT(0, payload); 
+      payload = "bR_"+String(blinkRandomness);
+      webSocket.sendTXT(0, payload); 
    yield();
    } 
     else {

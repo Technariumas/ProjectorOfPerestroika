@@ -26,26 +26,27 @@
         
             <table>
 			<tr>
-                  <td style="width:14.4px; text-align: right">Max. blink brightness: </td>
+                  <td style="width:14.4px; text-align: left">Max. brightness: </td>
                   <td><input class="enabled" id="blinkMax" type="range" min="500" max="955" step="1" oninput="setBlinkMax();" value="0"></td>
 			</tr>
 				
             <tr>
-                  <td style="width:14.4px; text-align: right">Min. blink brightness: </td>
+                  <td style="width:14.4px; text-align: left">Min. brightness: </td>
                   <td><input class="enabled" id="blinkMin" type="range" min="30" max="499" step="1" oninput="setBlinkMin();" value="0"></td>
 			</tr>
 			<tr>
-                  <td style="width:14.4px; text-align: right">Blinking step: </td>
+                  <td style="width:14.4px; text-align: left">Blinking step: </td>
                   <td><input class="enabled" id="blinkSpeed" type="range" min="1" max="5" step="1" oninput="setBlinkSpeed();" value="0"></td>
 			</tr>
 			<tr>		
-					<td style="width:14.4px; text-align: right">Blink randomness: </td>
+					<td style="width:14.4px; text-align: left;">Blink randomness: </td>
                   <td><input class="enabled" id="blinkRandomness" type="range" min="0" max="10" step="1" oninput="setBlinkRandomness();" value="0"></td>
             </tr>
             </table>
             <p style="margin:8px 0px">
             <button id="saveButton" class="button" style="background-color:#999" onclick="saveSettings();">Save</button>
             <button id="loadButton" class="button" style="background-color:#999" onclick="loadSettings();">Load</button>
+             <div id="settingsMsg"></div>
             </p>
         </div>
     </center>

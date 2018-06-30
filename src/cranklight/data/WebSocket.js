@@ -8,6 +8,7 @@ connection.onerror = function (error) {
 };
 connection.onmessage = function (e) {  
     console.log('Server: ', e.data);
+    var res = (e.data).split("_");
     parseVoltage(e.data);
 };
 connection.onclose = function(){
@@ -17,6 +18,7 @@ connection.onclose = function(){
 
 function preheat() {
 	connection.send("O");
+	clearSettingsMsg();
 	document.getElementById('offButton').style.backgroundColor = '#00878F';
 	document.getElementById('playButton').style.backgroundColor = '#999';
 	document.getElementById('pauseButton').style.backgroundColor = '#999';
@@ -29,6 +31,7 @@ function preheat() {
 
 function play(){
 	document.getElementById('blinkMax').className = 'enabled';
+	clearSettingsMsg();
     document.getElementById('blinkMax').disabled = false;
 	connection.send("B");
     document.getElementById('offButton').style.backgroundColor = '#999';
@@ -40,16 +43,21 @@ function play(){
 
 function saveSettings(){
 	connection.send("S");
-	alert("saved");
+	document.getElementById('settingsMsg').innerHTML = "<p>Settings saved.</p>";
 }
 
 function loadSettings(){
 	connection.send("L");
-	alert("loaded");
+	document.getElementById('settingsMsg').innerHTML = "<p>Settings loaded.</p>";
 }
+
+function clearSettingsMsg() {
+	document.getElementById('settingsMsg').innerHTML = "";
+	}
 
 function pause(){
 	connection.send("P");
+	clearSettingsMsg();
     document.getElementById('offButton').style.backgroundColor = '#999';
     document.getElementById('playButton').style.backgroundColor = '#999';
 	document.getElementById('pauseButton').style.backgroundColor = '#00878F';
@@ -65,6 +73,7 @@ function setBlinkMax() {
 }
 
 function setBlinkMin() {
+		clearSettingsMsg();
    		var b = parseInt(document.getElementById('blinkMin').value);
 		var str = '#'+ b.toString(16);    
 		console.log('Sending value: ' + str); 
@@ -72,15 +81,15 @@ function setBlinkMin() {
 }
 
 function setBlinkRandomness() {
+		clearSettingsMsg();
    		var b = parseInt(document.getElementById('blinkRandomness').value);
 		var str = '_'+ b.toString(16);    
 		console.log('Sending value: ' + str); 
 		connection.send(str);
 }
 
-
-
 function setBlinkSpeed() {
+		clearSettingsMsg();
    		var b = parseInt(document.getElementById('blinkSpeed').value);
 		var str = '^'+ b.toString(16);    
 		console.log('Sending value: ' + str); 
