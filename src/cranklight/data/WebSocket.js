@@ -1,20 +1,37 @@
 
 var connection = new WebSocket('ws://'+location.hostname+':81/', ['arduino']);
-connection.onopen = function () {
+	connection.onopen = function () {
     connection.send('Connect ' + new Date());
 };
 connection.onerror = function (error) {
     console.log('WebSocket Error ', error);
 };
+
 connection.onmessage = function (e) {  
-    console.log('Server: ', e.data);
-    var res = (e.data).split("_");
-    parseVoltage(e.data);
+    console.log('Wemos says: ', e.data);
+    var res = JSON.parse(e.data);
+    if(res.hasOwnProperty('voltage')){
+		parseVoltage(res.voltage);
+	}
+	else if(res.hasOwnProperty('maxBrightness')) {
+		document.getElementById('blinkMax').value = res.maxBrightness;
+		console.log("Brightness loaded", res.maxBrightness);
+	}
+	if(res.hasOwnProperty('minBrightness')) {
+		document.getElementById('blinkMin').value = res.minBrightness;
+	}
+	if(res.hasOwnProperty('blinkSpeed')) {
+		document.getElementById('blinkSpeed').value = res.blinkSpeed;
+	}
+	if(res.hasOwnProperty('blinkRandomness')) {
+		document.getElementById('blinkRandomness').value = res.blinkRandomness;
+	}
+	else console.log("Unexpected JSON message:", e.data,"end");
 };
+
 connection.onclose = function(){
     console.log('WebSocket connection closed');
 };
-
 
 function preheat() {
 	connection.send("O");

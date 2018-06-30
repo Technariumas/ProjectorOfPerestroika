@@ -10,7 +10,6 @@ ESP8266WiFiMulti wifiMulti;       // Create an instance of the ESP8266WiFiMulti 
 ESP8266WebServer server(80);       // create a web server on port 80
 WebSocketsServer webSocket = WebSocketsServer(81);    // create a websocket server on port 81
 
-//WebSocketsClient webSocketsClient;
 
 File fsUploadFile;                                    // a File variable to temporarily store the received file
 
@@ -72,18 +71,16 @@ byte fadeDirection = UP;
 int loadedMaxBrightness = 0;
 
 
+
 void loop() {
   webSocket.loop();                           // constantly check for websocket events
   server.handleClient();
   if(millis() > prevMillis + 5000) { 
     voltage = 4*(analogRead(A0)/1023.0);
-    String payload = "v_"+String(voltage);
-    webSocket.sendTXT(0, payload);    
+    sendVoltage(voltage);
     if (voltage < 0.80) {
     state = "LOW";
     }
-    Serial.println(analogRead(A0));
-    Serial.println(voltage);
     prevMillis = millis();
   }
 
@@ -145,22 +142,16 @@ void loadSettings() {
     const size_t bufferSize = JSON_OBJECT_SIZE(4) + 80;
     DynamicJsonBuffer jsonBuffer(bufferSize);
     JsonObject& root = jsonBuffer.parseObject(jsonFile);
-
-  maxBrightness = root["maxBrightness"]; 
-  minBrightness = root["minBrightness"]; 
-  blinkSpeed = root["blinkSpeed"]; 
-  blinkRandomness = root["blinkRandomness"]; 
+    maxBrightness = root["maxBrightness"]; 
+    minBrightness = root["minBrightness"]; 
+    blinkSpeed = root["blinkSpeed"]; 
+    blinkRandomness = root["blinkRandomness"]; 
   if (root.success()) {
-      Serial.println("Settings loaded");
-      String payload = "maxB_"+String(maxBrightness);
-      webSocket.sendTXT(0, payload); 
-      payload = "minB_"+String(minBrightness);
-      webSocket.sendTXT(0, payload); 
-      payload = "bS_"+String(blinkSpeed);
-      webSocket.sendTXT(0, payload); 
-      payload = "bR_"+String(blinkRandomness);
-      webSocket.sendTXT(0, payload); 
-   yield();
+       char buf[bufferSize];
+       size_t s = root.printTo(buf, sizeof(buf));
+       webSocket.sendTXT(0, buf, s);
+        root.printTo(Serial);
+      yield();
    } 
     else {
       Serial.println("failed to load json config");
@@ -168,6 +159,17 @@ void loadSettings() {
     jsonFile.close();
   }
   }
+
+void sendVoltage(float voltage) {
+  const size_t bufferSize = JSON_OBJECT_SIZE(1);
+  DynamicJsonBuffer jsonBuffer(bufferSize);
+  JsonObject& root = jsonBuffer.createObject();
+  root["voltage"] = voltage;
+  char buf[bufferSize];
+  size_t s = root.printTo(buf, sizeof(buf));
+  webSocket.sendTXT(0, buf, s);
+  }
+
 
 void saveSettings() {
     const size_t bufferSize = JSON_OBJECT_SIZE(4) + 80;
