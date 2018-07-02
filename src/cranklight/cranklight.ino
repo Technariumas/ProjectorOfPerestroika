@@ -68,14 +68,13 @@ String state = "OFF";
 unsigned long prevMillis = millis();
 unsigned long previousMillis = 0;
 byte fadeDirection = UP;
-int loadedMaxBrightness = 0;
-
+int batteryCheckStep = 20000;
 
 
 void loop() {
   webSocket.loop();                           // constantly check for websocket events
   server.handleClient();
-  if(millis() > prevMillis + 5000) { 
+  if(millis() > prevMillis + batteryCheckStep) { 
     voltage = 4*(analogRead(A0)/1023.0);
     sendVoltage(voltage);
     if (voltage < 0.80) {

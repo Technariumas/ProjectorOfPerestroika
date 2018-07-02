@@ -5,6 +5,7 @@ var connection = new WebSocket('ws://'+location.hostname+':81/', ['arduino']);
 };
 connection.onerror = function (error) {
     console.log('WebSocket Error ', error);
+    alert("Connection error. Disconnect all other devices from cranklight1!");
 };
 
 connection.onmessage = function (e) {  
@@ -117,21 +118,21 @@ function setBlinkSpeed() {
 function parseVoltage(voltage) {
 		var val = Number(voltage);
 		if (val < 0.83) {
-			warnVoltage(voltage);
+			warnVoltage((3.7*voltage).toPrecision(2));
 			}
 		else {
 			clearVoltage();
-			showVoltage(voltage);
+			showVoltage((3.7*voltage).toPrecision(2));
 			}		
 }
 
 function showVoltage(voltage) {
-	document.getElementById('voltage').innerHTML = "<p>Battery level: "+voltage+"</p>";
+	document.getElementById('voltage').innerHTML = "<p>Battery level: "+voltage+" V</p>";
 	}
-
+ 
 function warnVoltage(voltage) {
 	document.getElementById('voltage').style.backgroundColor = '#FF0000';
-	document.getElementById('voltage').innerHTML = "<p>Battery critically low. The system will shut down soon.</p> <p>Battery level: "+voltage+"</p>";
+	document.getElementById('voltage').innerHTML = "<p>Battery critically low. The system will shut down soon.</p> <p>Battery level: "+voltage+" V</p>";
 	}
 
 	
