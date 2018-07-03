@@ -17,7 +17,7 @@
         <header>
             <h1>Crank light 1</h1>
         </header>
-			    <div id="voltage"></div>
+			    <p id="voltage">Battery level: <em>Waiting..</em></div>
             <p style="margin:8px 0px">
 			<button id="offButton" class="button" style="background-color:#999" onclick="preheat();">Off</button>
             <button id="playButton" class="button" style="background-color:#999" onclick="play();">Play</button>
@@ -27,7 +27,7 @@
             <table>
 			<tr>
                   <td style="width:14.4px; text-align: left">Max. brightness: </td>
-                  <td><input class="enabled" id="blinkMax" type="range" min="500" max="800" step="1" oninput="setBlinkMax();" value="0"></td>
+                  <td><input class="enabled" id="blinkMax" type="range" min="500" max="900" step="1" oninput="setBlinkMax();" value="0"></td>
 			</tr>
 				
             <tr>
@@ -43,10 +43,11 @@
                   <td><input class="enabled" id="blinkRandomness" type="range" min="0" max="10" step="1" oninput="setBlinkRandomness();" value="0"></td>
             </tr>
             </table>
+            <p id="settingsMsg"></p>
             <p style="margin:8px 0px">
             <button id="saveButton" class="button" style="background-color:#999" onclick="saveSettings();">Save</button>
             <button id="loadButton" class="button" style="background-color:#999" onclick="loadSettings();">Load</button>
-             <div id="settingsMsg"></div>
+             
             </p>
         </div>
     </center>

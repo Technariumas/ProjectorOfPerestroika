@@ -1,6 +1,6 @@
 {
-  "maxBrightness": 20,
-  "minBrightness": 50,
-  "blinkSpeed": 20,
-"blinkRandomness": 2
+  "maxBrightness": 500,
+  "minBrightness": 30,
+  "blinkSpeed": 1,
+"blinkRandomness": 0
 }

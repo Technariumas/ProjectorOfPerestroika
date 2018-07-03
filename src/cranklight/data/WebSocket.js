@@ -1,3 +1,4 @@
+var voltageFactor = 3.7;
 
 var connection = new WebSocket('ws://'+location.hostname+':81/', ['arduino']);
 	connection.onopen = function () {
@@ -118,21 +119,21 @@ function setBlinkSpeed() {
 function parseVoltage(voltage) {
 		var val = Number(voltage);
 		if (val < 0.83) {
-			warnVoltage((3.7*voltage).toPrecision(2));
+			warnVoltage((voltageFactor*voltage).toPrecision(2));
 			}
 		else {
 			clearVoltage();
-			showVoltage((3.7*voltage).toPrecision(2));
+			showVoltage((voltageFactor*voltage).toPrecision(2));
 			}		
 }
 
 function showVoltage(voltage) {
-	document.getElementById('voltage').innerHTML = "<p>Battery level: "+voltage+" V</p>";
+	document.getElementById('voltage').innerHTML = "<p>Battery level: <strong>"+voltage+"</strong> V</p>";
 	}
  
 function warnVoltage(voltage) {
 	document.getElementById('voltage').style.backgroundColor = '#FF0000';
-	document.getElementById('voltage').innerHTML = "<p>Battery critically low. The system will shut down soon.</p> <p>Battery level: "+voltage+" V</p>";
+	document.getElementById('voltage').innerHTML = "<p>Battery critically low. The system will shut down soon.</p> <p>Battery level: <strong>"+voltage+"</strong> V</p>";
 	}
 
 	
