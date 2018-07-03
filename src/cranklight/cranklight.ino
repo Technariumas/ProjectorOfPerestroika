@@ -6,6 +6,8 @@
 #include <ESP8266mDNS.h>
 #include <WebSocketsServer.h>
 
+#define WEBSOCKETS_SERVER_CLIENT_MAX 1
+
 ESP8266WiFiMulti wifiMulti;       // Create an instance of the ESP8266WiFiMulti class, called 'wifiMulti'
 ESP8266WebServer server(80);       // create a web server on port 80
 
