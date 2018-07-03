@@ -22,6 +22,7 @@ File fsUploadFile;                                    // a File variable to temp
 #define UP 0
 #define DOWN 1
 #define settingsFile  "/settings.json"
+#define WiFiSettingsFile  "/wifi.json"
 float voltage = 0;
 int sleepTime = 10;  //change to 5 minutes
 
