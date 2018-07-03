@@ -119,11 +119,11 @@ function setBlinkSpeed() {
 function parseVoltage(voltage) {
 		var val = Number(voltage);
 		if (val < 0.83) {
-			warnVoltage((voltageFactor*voltage).toPrecision(2));
+			warnVoltage((voltageFactor*val).toPrecision(2));
 			}
 		else {
 			clearVoltage();
-			showVoltage((voltageFactor*voltage).toPrecision(2));
+			showVoltage((voltageFactor*val).toPrecision(2));
 			}		
 }
 
