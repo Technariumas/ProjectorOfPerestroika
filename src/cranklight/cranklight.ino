@@ -61,8 +61,10 @@ void setup() {
   startMDNS();                 // Start the mDNS responder
 
   startServer();               // Start a HTTP server with a file read handler and an upload handler
-  
+
+  loadSettings();
 }
+
 const int preheatValue = 25;
 int minBrightness = preheatValue;
 int maxBrightness = 500;
@@ -142,57 +144,68 @@ void loop() {
  
  }
 
+const size_t settingsBufferSize = JSON_OBJECT_SIZE(4) + 80;
+StaticJsonBuffer<settingsBufferSize> jsonSettingsBuffer;
+char settingsBuf[settingsBufferSize];
+
 void loadSettings() {
   // parse json config file
   File jsonFile = SPIFFS.open(settingsFile, "r");
   if (jsonFile) {
-    // Allocate a buffer to store contents of the file.
-    const size_t bufferSize = JSON_OBJECT_SIZE(4) + 80;
-    DynamicJsonBuffer jsonBuffer(bufferSize);
-    JsonObject& root = jsonBuffer.parseObject(jsonFile);
-    maxBrightness = root["maxBrightness"]; 
-    minBrightness = root["minBrightness"]; 
-    blinkSpeed = root["blinkSpeed"]; 
-    blinkRandomness = root["blinkRandomness"]; 
-  if (root.success()) {
-       char buf[bufferSize];
-       size_t s = root.printTo(buf, sizeof(buf));
-       webSocket.sendTXT(0, buf, s);
-        root.printTo(Serial);
+    
+    jsonSettingsBuffer.clear();
+    JsonObject& root = jsonSettingsBuffer.parseObject(jsonFile);
+    
+    if (root.success()) {
+      maxBrightness = root["maxBrightness"]; 
+      minBrightness = root["minBrightness"]; 
+      blinkSpeed = root["blinkSpeed"]; 
+      blinkRandomness = root["blinkRandomness"]; 
+
+      root.printTo(Serial);
+      Serial.println("Settings loaded");
       yield();
-   } 
-    else {
+      size_t s = root.printTo(settingsBuf, sizeof(settingsBuf));
+      yield();
+      webSocket.sendTXT(0, settingsBuf, s);
+      yield();
+      yield();
+    }  else {
       Serial.println("failed to load json config");
     }
     jsonFile.close();
   }
-  }
+}
 
 const size_t voltageBufferSize = JSON_OBJECT_SIZE(1);
 StaticJsonBuffer<voltageBufferSize> jsonVoltageBuffer;
-JsonObject& voltageRoot = jsonVoltageBuffer.createObject();
 char voltageBuf[voltageBufferSize];
 
 void sendVoltage(float voltage) {
+  jsonVoltageBuffer.clear();
+  JsonObject& voltageRoot = jsonVoltageBuffer.createObject();
   voltageRoot["voltage"] = voltage;
   size_t s = voltageRoot.printTo(voltageBuf, sizeof(voltageBuf));
   webSocket.sendTXT(0, voltageBuf, s);
+  voltageRoot.printTo(Serial);
+  Serial.println(" Voltage sent");
 }
 
-StaticJsonBuffer<JSON_OBJECT_SIZE(4) + 80> jsonSettingsBuffer;
-JsonObject& settingsRoot = jsonSettingsBuffer.createObject();
-
 void saveSettings() {
+  jsonSettingsBuffer.clear();
+  JsonObject& settingsRoot = jsonSettingsBuffer.createObject();
   settingsRoot["maxBrightness"] = maxBrightness;
   settingsRoot["minBrightness"] = minBrightness;
   settingsRoot["blinkSpeed"] = blinkSpeed;
   settingsRoot["blinkRandomness"] = blinkRandomness;
   
   File jsonFile = SPIFFS.open(settingsFile, "w");
+  yield();
   settingsRoot.printTo(jsonFile);
+  yield();
   if (settingsRoot.success()) {
+    settingsRoot.printTo(Serial);
     Serial.println("Settings saved");
-    yield();
   } else {
     Serial.println("failed to save json config");
   }
@@ -359,6 +372,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         IPAddress ip = webSocket.remoteIP(num);
         Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
         state = "OFF";                  // Turn flicker off when a new connection is established
+        loadSettings();
       }
       break;
     case WStype_TEXT:                     // if new text data is received
