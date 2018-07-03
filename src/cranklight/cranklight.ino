@@ -13,7 +13,7 @@ ESP8266WebServer server(80);       // create a web server on port 80
 
 WebSocketsServer webSocket = WebSocketsServer(81);    // create a websocket server on port 81
 
-const char *ssid = "cranklightBig"; // The name of the Wi-Fi network that will be created
+const char *ssid = "cranklight0"; // The name of the Wi-Fi network that will be created
 const char *password = "cranklight";   // The password required to connect to it, leave blank for an open network
 
 
@@ -28,6 +28,23 @@ File fsUploadFile;                                    // a File variable to temp
 #define settingsFile  "/settings.json"
 float voltage = 0;
 int sleepTime = 10;  //change to 5 minutes
+const int preheatValue = 30;
+int minBrightness = preheatValue;
+int maxBrightness = 500;
+int brightness = maxBrightness;
+int timeStep = 3;
+int blinkSpeed = timeStep;
+int randomStep = 5;
+int blinkRandomness = 0;
+int maxBrightnessLimit = 800;
+int brightnessStep = 5;
+String state = "OFF";
+unsigned long prevMillis = millis();
+unsigned long previousMillis = 0;
+unsigned long currentMillis = 0;
+byte fadeDirection = UP;
+int batteryCheckStep = 20000;
+
 
 const char* mdnsName = "projector"; // Domain name for the mDNS responder
 void startWiFi();
@@ -67,31 +84,17 @@ void setup() {
   loadSettings();
 }
 
-const int preheatValue = 25;
-int minBrightness = preheatValue;
-int maxBrightness = 500;
-int brightness = maxBrightness;
-int timeStep = 3;
-int blinkSpeed = timeStep;
-int randomStep = 5;
-int blinkRandomness = 0;
-int maxBrightnessLimit = 955;
-int brightnessStep = 5;
-String state = "OFF";
-unsigned long prevMillis = millis();
-unsigned long previousMillis = 0;
-byte fadeDirection = UP;
-int batteryCheckStep = 20000;
-
 
 void loop() {
+  Serial.println("websocket loop");
   webSocket.loop();                           // constantly check for websocket events
   server.handleClient();
   if(millis() > prevMillis + batteryCheckStep) { 
     voltage = 4*(analogRead(A0)/1023.0);
+    Serial.println("Sending voltage");
     sendVoltage(voltage);
     if (voltage < 0.80) {
-    state = "LOW";
+      state = "LOW";
     }
     prevMillis = millis();
   }
@@ -104,15 +107,18 @@ void loop() {
     ESP.deepSleep(1000000*sleepTime); 
     }
   else if (state == "PAUSE") {
+    Serial.println("Paused");
+
     shine(brightness);
     }
   else if (state == "PLAY") {
-      unsigned long currentMillis = millis();
+      currentMillis = millis();
       int currentBrightness = brightness;
       if (currentMillis - previousMillis >= timeStep) {
          previousMillis = currentMillis;
-         //Serial.println(blinkRandomness);
          if (fadeDirection == DOWN) {
+         Serial.print("Down, ");
+         Serial.println(brightness);
          brightness = brightness - brightnessStep;
          shine(brightness);
            /* Serial.print(minBrightness);
@@ -128,11 +134,13 @@ void loop() {
           fadeDirection = UP;
           shine(minBrightness);
           timeStep = blinkSpeed + random(blinkRandomness);
-          //Serial.println(timeStep);
+          Serial.println("turning round");
       }
        if (fadeDirection == UP) {
         while(brightness < maxBrightness) {
             brightness = brightness + brightnessStep;
+            Serial.print("Down, ");
+            Serial.println(brightness);
             shine(brightness); 
             delay(2);
             yield();
@@ -170,6 +178,7 @@ void loadSettings() {
       size_t s = root.printTo(settingsBuf, sizeof(settingsBuf));
       yield();
       webSocket.sendTXT(0, settingsBuf, s);
+      Serial.println("Settings sent via websockets");
       yield();
       yield();
     }  else {
@@ -223,12 +232,19 @@ void startPreheat() {
  
 
 void shine(int brightness) {
+          
           if(brightness < preheatValue) {
-          digitalWrite(LAMP, LOW);
+          Serial.println("before digital write low");
+          //digitalWrite(LAMP, LOW);
+          analogWrite(LAMP,  preheatValue);
+          Serial.println("after digital write low");
+                  
         } else if(brightness > maxBrightnessLimit) {
-          digitalWrite(LAMP, HIGH);
+          Serial.println("before digital write high");
+          analogWrite(LAMP, maxBrightnessLimit);
         } else {
           analogWrite(LAMP,  brightness);
+          Serial.println(brightness);
         }
 }
 
