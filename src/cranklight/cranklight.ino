@@ -21,6 +21,8 @@ File fsUploadFile;                                    // a File variable to temp
 #define LAMP D1
 #define UP 0
 #define DOWN 1
+#define LED_RED D3
+#define LED_GREEN D4
 #define settingsFile  "/settings.json"
 float voltage = 0;
 int sleepTime = 10;  //change to 5 minutes
@@ -33,6 +35,11 @@ void startMDNS();
 void startServer();
 
 void setup() {
+  pinMode(LED_RED, OUTPUT);
+  pinMode(LED_GREEN, OUTPUT);
+  digitalWrite(LED_RED, LOW);
+  digitalWrite(LED_GREEN, LOW);
+
   randomSeed(3);
   pinMode(LAMP, OUTPUT);    // the pins with LEDs connected are outputs
   digitalWrite(LAMP, LOW);
@@ -211,12 +218,30 @@ void shine(int brightness) {
 }
 
 
+WiFiEventHandler stationConnectedHandler;
+WiFiEventHandler stationDisconnectedHandler;
+
 void startWiFi() { // Start a Wi-Fi access point, and try to connect to some given access points. Then wait for either an AP or STA connection
-  WiFi.softAP(ssid, password);             // Start the access point
+  while(!WiFi.softAP(ssid, password)) {             // Start the access point
+    Serial.println("Starting AP");
+    delay(100);
+  }
+  stationConnectedHandler = WiFi.onSoftAPModeStationConnected(&onStationConnected);
+  stationDisconnectedHandler = WiFi.onSoftAPModeStationDisconnected(&onStationDisconnected);
   Serial.print("Access Point \"");
   Serial.print(ssid);
   Serial.println("\" started");
   Serial.println(WiFi.softAPIP());
+}
+
+void onStationConnected(const WiFiEventSoftAPModeStationConnected& evt) {
+  Serial.print("Client connected: ");
+  digitalWrite(LED_GREEN, HIGH);
+}
+
+void onStationDisconnected(const WiFiEventSoftAPModeStationDisconnected& evt) {
+  Serial.print("Client disconnected: ");
+  digitalWrite(LED_GREEN, LOW);
 }
 
 
