@@ -120,6 +120,7 @@ void loadSettings() {
     jsonSettingsBuffer.clear();
     JsonObject& root = jsonSettingsBuffer.parseObject(jsonFile);
     if (root.success()) {
+      brightness = root["brightness"]; 
       maxBrightness = root["maxBrightness"]; 
       blinkRate = root["blinkRate"]; 
       root.printTo(Serial);
@@ -178,6 +179,7 @@ void sendVoltage(float voltage) {
 void saveSettings() {
   jsonSettingsBuffer.clear();
   JsonObject& settingsRoot = jsonSettingsBuffer.createObject();
+  settingsRoot["brightness"] = brightness;
   settingsRoot["maxBrightness"] = maxBrightness;
   settingsRoot["blinkRate"] = blinkRate;
   File jsonFile = SPIFFS.open(settingsFile, "w");

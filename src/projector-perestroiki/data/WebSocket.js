@@ -32,6 +32,9 @@ connection.onmessage = function (e) {
 		document.getElementById('blinkMax').value = res.maxBrightness;
 		console.log("Brightness loaded", res.maxBrightness);
 	}
+	if(res.hasOwnProperty('brightness')) {
+		document.getElementById('dimmer').value = res.blinkRate;
+	}
 	if(res.hasOwnProperty('blinkRate')) {
 		document.getElementById('blinkRate').value = res.blinkRate;
 	}

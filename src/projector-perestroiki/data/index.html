@@ -36,7 +36,12 @@
                   <td><input class="enabled" id="blinkRate" type="range" min="10" max="100" step="1" oninput="setBlinkRate();" value="0"></td>
             </tr>
             </table>
-        <p id="settingsMsg"></p>
+                   <p id="settingsMsg"></p>
+            <p style="margin:8px 0px">
+            <button id="saveButton" class="button" style="background-color:#999" onclick="saveSettings();">Save</button>
+            <button id="loadButton" class="button" style="background-color:#999" onclick="loadSettings();">Load</button>
+             
+            </p>
     </center>
 </body>
 </html>
