@@ -1,30 +1,51 @@
+#include <FS.h>
+#include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiMulti.h>
-#include <ArduinoOTA.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
-#include <FS.h>
 #include <WebSocketsServer.h>
 
 ESP8266WiFiMulti wifiMulti;       // Create an instance of the ESP8266WiFiMulti class, called 'wifiMulti'
 ESP8266WebServer server(80);       // create a web server on port 80
+
 WebSocketsServer webSocket = WebSocketsServer(81);    // create a websocket server on port 81
 
-//WebSocketsClient webSocketsClient;
+char ssid[12] = ""; // The name of the Wi-Fi network that will be created
+char password[11] = "";   // The password required to connect to it, leave blank for an open network
+
 
 File fsUploadFile;                                    // a File variable to temporarily store the received file
 
-const char *ssid = "projector"; // The name of the Wi-Fi network that will be created
-const char *password = "perestroika";   // The password required to connect to it, leave blank for an open network
 
-const char *OTAName = "KREDENCAS";           // A name and a password for the OTA service
-const char *OTAPassword = "ledinis";
 #define LAMP D1
+#define UP 0
+#define DOWN 1
+#define LED_RED D3
+#define LED_GREEN D4
+#define settingsFile  "/settings.json"
+#define wifiSettingsFile  "/wifiSettings.json"
 
 float voltage = 0;
-int sleepTime = 3;  //change to 5 minutes
+int sleepTime = 10;  //change to 5 minutes
+const int preheatValue = 30;
+int minBrightness = preheatValue;
+int maxBrightness = 500;
+int brightness = maxBrightness;
+int timeStep = 3;
+int blinkSpeed = timeStep;
+int randomStep = 5;
+int blinkRandomness = 0;
+int maxBrightnessLimit = 900;
+int brightnessStep = 5;
+String state = "OFF";
+unsigned long prevMillis = millis();
+unsigned long previousMillis = 0;
+unsigned long currentMillis = 0;
+byte fadeDirection = UP;
+int batteryCheckStep = 20000;
 
-const char* mdnsName = "projector"; // Domain name for the mDNS responder
+void loadWiFiSettings();
 void startWiFi();
 void startSPIFFS();               
 void startWebSocket();            
@@ -32,6 +53,11 @@ void startMDNS();
 void startServer();
 
 void setup() {
+  pinMode(LED_RED, OUTPUT);
+  pinMode(LED_GREEN, OUTPUT);
+  digitalWrite(LED_RED, LOW);
+  digitalWrite(LED_GREEN, LOW);
+  randomSeed(3);
   pinMode(LAMP, OUTPUT);    // the pins with LEDs connected are outputs
   digitalWrite(LAMP, LOW);
   pinMode(A0, INPUT_PULLUP);
@@ -40,43 +66,34 @@ void setup() {
   Serial.println("\r\n");
 
   analogWriteFreq(20000);
-  analogWriteRange(127);
-  
-  startWiFi();                 // Start a Wi-Fi access point, and try to connect to some given access points. Then wait for either an AP or STA connection
-  
-//  startOTA();                  // Start the OTA service
-  
+  //analogWriteRange(1023);
   startSPIFFS();               // Start the SPIFFS and list all contents
+  loadWiFiSettings();
+    
+  startWiFi();                 // Start a Wi-Fi access point, and try to connect to some given access points. Then wait for either an AP or STA connection
 
   startWebSocket();            // Start a WebSocket server
   
   startMDNS();                 // Start the mDNS responder
 
   startServer();               // Start a HTTP server with a file read handler and an upload handler
-  
+
+  loadSettings();
 }
-const int preheatValue = 3;
-int maxBrightness = 3;
-int brightness = preheatValue;
-int blinkRate = 50;
-String state = "OFF";
-unsigned long prevMillis = millis();
 
 
 void loop() {
   webSocket.loop();                           // constantly check for websocket events
-  server.handleClient();                      // run the server
-  ArduinoOTA.handle();                        // listen for OTA events
-  if(millis() > prevMillis + 5000) { 
-    voltage = 4*analogRead(A0)*(3.8 / 1023.0);
-    Serial.println(voltage);
-    String payload = String(voltage);
-    webSocket.sendTXT(0, payload);    
-    if (voltage < 3) {
-    state = "LOW";
+  server.handleClient();
+  if(millis() > prevMillis + batteryCheckStep) { 
+    voltage = 4*(analogRead(A0)/1023.0);
+    sendVoltage(voltage);
+    if (voltage < 0.80) {
+      state = "LOW";
     }
     prevMillis = millis();
   }
+
   if (state == "OFF") {
     startPreheat();
   }
@@ -84,105 +101,176 @@ void loop() {
     Serial.println("Going to sleep");
     ESP.deepSleep(1000000*sleepTime); 
     }
-  else if (state == "SHINE") {
-    startShine();
+  else if (state == "PAUSE") {
+    shine(brightness);
     }
-  else if (state == "BLINK") {
-    startFlicker();
-  }
+  else if (state == "PLAY") {
+      currentMillis = millis();
+      int currentBrightness = brightness;
+      if (currentMillis - previousMillis >= timeStep) {
+         previousMillis = currentMillis;
+         if (fadeDirection == DOWN) {
+         brightness = brightness - brightnessStep;
+         shine(brightness);
+         }
+         }
+       if(brightness < minBrightness) {
+          yield();
+          fadeDirection = UP;
+          shine(minBrightness);
+          timeStep = blinkSpeed + random(blinkRandomness);
+      }
+       if (fadeDirection == UP) {
+        while(brightness < maxBrightness) {
+            brightness = brightness + brightnessStep;
+            shine(brightness); 
+            delay(2);
+            yield();
+            }  
+         fadeDirection = DOWN; 
+        }
+  } 
   else {
     Serial.println("Error");
     }
  
  }
 
-void startPreheat() {
-  digitalWrite(LAMP, LOW);
-  }
+const size_t settingsBufferSize = JSON_OBJECT_SIZE(4) + 80;
+StaticJsonBuffer<settingsBufferSize> jsonSettingsBuffer;
+char settingsBuf[settingsBufferSize];
 
-void startShine() {
-    shine(brightness);
-  }
+void loadSettings() {
+  // parse json config file
+  File jsonFile = SPIFFS.open(settingsFile, "r");
+  if (jsonFile) {
+    jsonSettingsBuffer.clear();
+    JsonObject& root = jsonSettingsBuffer.parseObject(jsonFile);
+    if (root.success()) {
+      maxBrightness = root["maxBrightness"]; 
+      minBrightness = root["minBrightness"]; 
+      blinkSpeed = root["blinkSpeed"]; 
+      blinkRandomness = root["blinkRandomness"]; 
 
-void startFlicker() {
-    int v = 22 + random(maxBrightness);
-    shine(v);
-    //Serial.println("Blinking");
-    //Serial.println(blinkRate);
-    for(int i = 0; i < random(blinkRate); i++){
-      delay(10);
-      webSocket.loop();
+      root.printTo(Serial);
+      yield();
+      size_t s = root.printTo(settingsBuf, sizeof(settingsBuf));
+      yield();
+      webSocket.sendTXT(0, settingsBuf, s);
+      yield();
+      yield();
+    }  else {
+      Serial.println("failed to load json config");
     }
+    jsonFile.close();
   }
-  
+}
+
+//WiFi settings file
+
+const size_t wifiBufferSize = JSON_OBJECT_SIZE(2) + 80;
+StaticJsonBuffer<wifiBufferSize> wifiSettingsBuffer;
+
+void loadWiFiSettings() {
+  // parse json config file
+  File jsonFile = SPIFFS.open(wifiSettingsFile, "r");
+  if (jsonFile) {
+    jsonSettingsBuffer.clear();
+    JsonObject& root = wifiSettingsBuffer.parseObject(jsonFile);
+    if (root.success()) {
+      strcpy(ssid, root["ssid"]); 
+      strcpy(password, root["password"]); 
+      root.printTo(Serial);
+      yield();
+    }  else {
+      Serial.println("failed to load WiFi config");
+    }
+    jsonFile.close();
+  }
+  else {
+    Serial.println("No WiFi settings file");
+    }
+}
+
+const size_t voltageBufferSize = JSON_OBJECT_SIZE(1);
+StaticJsonBuffer<voltageBufferSize> jsonVoltageBuffer;
+char voltageBuf[voltageBufferSize];
+
+void sendVoltage(float voltage) {
+  jsonVoltageBuffer.clear();
+  JsonObject& voltageRoot = jsonVoltageBuffer.createObject();
+  voltageRoot["voltage"] = voltage;
+  size_t s = voltageRoot.printTo(voltageBuf, sizeof(voltageBuf));
+  webSocket.sendTXT(0, voltageBuf, s);
+  voltageRoot.printTo(Serial);
+}
+
+void saveSettings() {
+  jsonSettingsBuffer.clear();
+  JsonObject& settingsRoot = jsonSettingsBuffer.createObject();
+  settingsRoot["maxBrightness"] = maxBrightness;
+  settingsRoot["minBrightness"] = minBrightness;
+  settingsRoot["blinkSpeed"] = blinkSpeed;
+  settingsRoot["blinkRandomness"] = blinkRandomness;
+  File jsonFile = SPIFFS.open(settingsFile, "w");
+  yield();
+  settingsRoot.printTo(jsonFile);
+  yield();
+  if (settingsRoot.success()) {
+    settingsRoot.printTo(Serial);
+  } else {
+    Serial.println("failed to save json config");
+  }
+  jsonFile.close();
+}
+
+void startPreheat() {
+  brightness = minBrightness;
+  randomSeed(3);
+  fadeDirection = UP;
+  digitalWrite(LAMP, LOW); 
+  }
+ 
 
 void shine(int brightness) {
-          if(brightness < 3) {
-          digitalWrite(LAMP, LOW);
-        } else if(brightness > 122) {
-          digitalWrite(LAMP, HIGH);
+          
+          if(brightness < preheatValue) {
+          analogWrite(LAMP,  preheatValue);
+                  
+        } else if(brightness > maxBrightnessLimit) {
+          analogWrite(LAMP, maxBrightnessLimit);
         } else {
           analogWrite(LAMP,  brightness);
         }
 }
 
 
+WiFiEventHandler stationConnectedHandler;
+WiFiEventHandler stationDisconnectedHandler;
+
 void startWiFi() { // Start a Wi-Fi access point, and try to connect to some given access points. Then wait for either an AP or STA connection
-  WiFi.softAP(ssid, password);             // Start the access point
+  while(!WiFi.softAP(ssid, password)) {             // Start the access point
+    Serial.println("Starting AP");
+    delay(100);
+  }
+  stationConnectedHandler = WiFi.onSoftAPModeStationConnected(&onStationConnected);
+  stationDisconnectedHandler = WiFi.onSoftAPModeStationDisconnected(&onStationDisconnected);
   Serial.print("Access Point \"");
   Serial.print(ssid);
-  Serial.println("\" started\r\n");
-  if(WiFi.waitForConnectResult() != WL_CONNECTED){
-        Serial.println("WiFi FAIL!!!");
-        return;
-  }
-
-//  wifiMulti.addAP("TECHNARIUM", "user23422");   // add Wi-Fi networks you want to connect to
-//  wifiMulti.addAP("ssid_from_AP_2", "your_password_for_AP_2");
-//  wifiMulti.addAP("ssid_from_AP_3", "your_password_for_AP_3");
-
-//  Serial.println("Connecting");
-//  while (wifiMulti.run() != WL_CONNECTED && WiFi.softAPgetStationNum() < 1) {  // Wait for the Wi-Fi to connect
-//    delay(250);
-//    Serial.print('.');
-//  }
-//  Serial.println("\r\n");
-//  if(WiFi.softAPgetStationNum() == 0) {      // If the ESP is connected to an AP
-//    Serial.print("Connected to ");
-//    Serial.println(WiFi.SSID());             // Tell us what network we're connected to
-//    Serial.print("IP address:\t");
-//    Serial.print(WiFi.localIP());            // Send the IP address of the ESP8266 to the computer
-//  } else {                                   // If a station is connected to the ESP SoftAP
-//    Serial.print("Station connected to ESP8266 AP");
-//  }
-  Serial.println("\r\n");
+  Serial.println("\" started");
+  Serial.println(WiFi.softAPIP());
 }
 
-void startOTA() { // Start the OTA service
-  ArduinoOTA.setHostname(OTAName);
-  ArduinoOTA.setPassword(OTAPassword);
-
-  ArduinoOTA.onStart([]() {
-    Serial.println("Start");
-    digitalWrite(LAMP, LOW);
-  });
-  ArduinoOTA.onEnd([]() {
-    Serial.println("\r\nEnd");
-  });
-  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-  });
-  ArduinoOTA.onError([](ota_error_t error) {
-    Serial.printf("Error[%u]: ", error);
-    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-    else if (error == OTA_END_ERROR) Serial.println("End Failed");
-  });
-  ArduinoOTA.begin();
-  Serial.println("OTA ready\r\n");
+void onStationConnected(const WiFiEventSoftAPModeStationConnected& evt) {
+  Serial.print("Client connected: ");
+  digitalWrite(LED_GREEN, HIGH);
 }
+
+void onStationDisconnected(const WiFiEventSoftAPModeStationDisconnected& evt) {
+  Serial.print("Client disconnected: ");
+  digitalWrite(LED_GREEN, LOW);
+}
+
 
 String formatBytes(size_t bytes);
 
@@ -209,9 +297,9 @@ void startWebSocket() { // Start a WebSocket server
 }
 
 void startMDNS() { // Start the mDNS responder
-  MDNS.begin(mdnsName);                        // start the multicast domain name server
+  MDNS.begin(ssid);                        // start the multicast domain name server
   Serial.print("mDNS responder started: http://");
-  Serial.print(mdnsName);
+  Serial.print(ssid);
   Serial.println(".local");
 }
 
@@ -229,7 +317,6 @@ void startServer() { // Start a HTTP server with a file read handler and an uplo
   server.begin();                             // start the HTTP server
   Serial.println("HTTP server started.");
 }
-
 
 
 bool handleFileRead(String path);
@@ -299,27 +386,38 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         IPAddress ip = webSocket.remoteIP(num);
         Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
         state = "OFF";                  // Turn flicker off when a new connection is established
+        loadSettings();
       }
       break;
     case WStype_TEXT:                     // if new text data is received
       Serial.printf("[%u] get Text: %s\n", num, payload);
-      if (payload[0] == '#') {            // we get brightness data
-        uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
-        brightness =          val & 0x3FF;                      // B: bits  0-9
-        }
-        else if (payload[0] == 'S') {
-          state = "SHINE";
+      if (payload[0] == 'P') {
+          state = "PAUSE";
         }
         else if (payload[0] == 'B') {
-          state = "BLINK";
+          state = "PLAY";
         }
+      if (payload[0] == 'L') {
+          loadSettings();
+        }
+        else if (payload[0] == 'S') {
+          saveSettings();
+        }        
         else if (payload[0] == '*') {                      // the browser sends a * when the flicker effect is enabled
         uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
         maxBrightness =          val & 0x3FF;                      // B: bits  0-9
       }
+        else if (payload[0] == '#') {                      // the browser sends a * when the flicker effect is enabled
+        uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
+        minBrightness =          val & 0x3FF;                      // B: bits  0-9
+      }
+        else if (payload[0] == '^') {                      // the browser sends a * when the flicker effect is enabled
+        uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
+        blinkSpeed =          val & 0x3FF;                      // B: bits  0-9
+      }
       else if (payload[0] == '_') {                      // the browser sends a * when the flicker effect is enabled
         uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
-        blinkRate =          val & 0x3FF;                      // B: bits  0-9
+        blinkRandomness =          val & 0x3FF;                      // B: bits  0-9
       }
        else if (payload[0] == 'O') {                      // the browser sends an O when the preheat mode is on
         state = "OFF";
