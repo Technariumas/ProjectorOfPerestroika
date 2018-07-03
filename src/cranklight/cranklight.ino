@@ -11,7 +11,7 @@ ESP8266WebServer server(80);       // create a web server on port 80
 
 WebSocketsServer webSocket = WebSocketsServer(81);    // create a websocket server on port 81
 
-const char *ssid = "cranklight6"; // The name of the Wi-Fi network that will be created
+const char *ssid = "cranklightBig"; // The name of the Wi-Fi network that will be created
 const char *password = "cranklight";   // The password required to connect to it, leave blank for an open network
 
 
@@ -215,12 +215,8 @@ void startWiFi() { // Start a Wi-Fi access point, and try to connect to some giv
   WiFi.softAP(ssid, password);             // Start the access point
   Serial.print("Access Point \"");
   Serial.print(ssid);
-  Serial.println("\" started\r\n");
-  if(WiFi.waitForConnectResult() != WL_CONNECTED){
-        Serial.println("WiFi FAIL!!!");
-        return;
-  }
-  Serial.println("\r\n");
+  Serial.println("\" started");
+  Serial.println(WiFi.softAPIP());
 }
 
 
