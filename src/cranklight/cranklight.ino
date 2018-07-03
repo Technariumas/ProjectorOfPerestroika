@@ -13,7 +13,7 @@ WebSocketsServer webSocket = WebSocketsServer(81);    // create a websocket serv
 
 const char *ssid = "cranklightBig"; // The name of the Wi-Fi network that will be created
 const char *password = "cranklight";   // The password required to connect to it, leave blank for an open network
-
+const char *mdnsName = "projector"; // Domain name for the mDNS responder
 
 File fsUploadFile;                                    // a File variable to temporarily store the received file
 
@@ -21,13 +21,11 @@ File fsUploadFile;                                    // a File variable to temp
 #define LAMP D1
 #define UP 0
 #define DOWN 1
-#define LED_RED D3
-#define LED_GREEN D4
 #define settingsFile  "/settings.json"
+#define WiFiSettingsFile  "/wifi.json"
 float voltage = 0;
 int sleepTime = 10;  //change to 5 minutes
 
-const char* mdnsName = "projector"; // Domain name for the mDNS responder
 void startWiFi();
 void startSPIFFS();               
 void startWebSocket();            
@@ -35,11 +33,6 @@ void startMDNS();
 void startServer();
 
 void setup() {
-  pinMode(LED_RED, OUTPUT);
-  pinMode(LED_GREEN, OUTPUT);
-  digitalWrite(LED_RED, LOW);
-  digitalWrite(LED_GREEN, LOW);
-
   randomSeed(3);
   pinMode(LAMP, OUTPUT);    // the pins with LEDs connected are outputs
   digitalWrite(LAMP, LOW);
@@ -79,7 +72,7 @@ String state = "OFF";
 unsigned long prevMillis = millis();
 unsigned long previousMillis = 0;
 byte fadeDirection = UP;
-int batteryCheckStep = 20000;
+int batteryCheckStep = 200;
 
 
 void loop() {
@@ -88,6 +81,7 @@ void loop() {
   if(millis() > prevMillis + batteryCheckStep) { 
     voltage = 4*(analogRead(A0)/1023.0);
     sendVoltage(voltage);
+    Serial.println(voltage);
     if (voltage < 0.80) {
     state = "LOW";
     }
@@ -231,30 +225,16 @@ void shine(int brightness) {
 }
 
 
-WiFiEventHandler stationConnectedHandler;
-WiFiEventHandler stationDisconnectedHandler;
-
 void startWiFi() { // Start a Wi-Fi access point, and try to connect to some given access points. Then wait for either an AP or STA connection
-  while(!WiFi.softAP(ssid, password)) {             // Start the access point
-    Serial.println("Starting AP");
-    delay(100);
-  }
-  stationConnectedHandler = WiFi.onSoftAPModeStationConnected(&onStationConnected);
-  stationDisconnectedHandler = WiFi.onSoftAPModeStationDisconnected(&onStationDisconnected);
+  WiFi.softAP(ssid, password);             // Start the access point
   Serial.print("Access Point \"");
   Serial.print(ssid);
-  Serial.println("\" started");
-  Serial.println(WiFi.softAPIP());
-}
-
-void onStationConnected(const WiFiEventSoftAPModeStationConnected& evt) {
-  Serial.print("Client connected: ");
-  digitalWrite(LED_GREEN, HIGH);
-}
-
-void onStationDisconnected(const WiFiEventSoftAPModeStationDisconnected& evt) {
-  Serial.print("Client disconnected: ");
-  digitalWrite(LED_GREEN, LOW);
+  Serial.println("\" started\r\n");
+  if(WiFi.waitForConnectResult() != WL_CONNECTED){
+        Serial.println("WiFi FAIL!!!");
+        return;
+  }
+  Serial.println("\r\n");
 }
 
 
