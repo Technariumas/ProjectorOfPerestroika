@@ -161,34 +161,34 @@ void loadSettings() {
   }
   }
 
-void sendVoltage(float voltage) {
-  const size_t bufferSize = JSON_OBJECT_SIZE(1);
-  DynamicJsonBuffer jsonBuffer(bufferSize);
-  JsonObject& root = jsonBuffer.createObject();
-  root["voltage"] = voltage;
-  char buf[bufferSize];
-  size_t s = root.printTo(buf, sizeof(buf));
-  webSocket.sendTXT(0, buf, s);
-  }
+const size_t voltageBufferSize = JSON_OBJECT_SIZE(1);
+StaticJsonBuffer<voltageBufferSize> jsonVoltageBuffer;
+JsonObject& voltageRoot = jsonVoltageBuffer.createObject();
+char voltageBuf[voltageBufferSize];
 
+void sendVoltage(float voltage) {
+  voltageRoot["voltage"] = voltage;
+  size_t s = voltageRoot.printTo(voltageBuf, sizeof(voltageBuf));
+  webSocket.sendTXT(0, voltageBuf, s);
+}
+
+StaticJsonBuffer<JSON_OBJECT_SIZE(4) + 80> jsonSettingsBuffer;
+JsonObject& settingsRoot = jsonSettingsBuffer.createObject();
 
 void saveSettings() {
-    const size_t bufferSize = JSON_OBJECT_SIZE(4) + 80;
-    StaticJsonBuffer<bufferSize> jsonBuffer;
-    JsonObject& root = jsonBuffer.createObject();
-    root["maxBrightness"] = maxBrightness;
-    root["minBrightness"] = minBrightness;
-    root["blinkSpeed"] = blinkSpeed;
-    root["blinkRandomness"] = blinkRandomness;
-    File jsonFile = SPIFFS.open(settingsFile, "w");
-     root.printTo(jsonFile);
-    if (root.success()) {
-      Serial.println("Settings saved");
-   yield();
-   } 
-    else {
-      Serial.println("failed to save json config");
-    }
+  settingsRoot["maxBrightness"] = maxBrightness;
+  settingsRoot["minBrightness"] = minBrightness;
+  settingsRoot["blinkSpeed"] = blinkSpeed;
+  settingsRoot["blinkRandomness"] = blinkRandomness;
+  
+  File jsonFile = SPIFFS.open(settingsFile, "w");
+  settingsRoot.printTo(jsonFile);
+  if (settingsRoot.success()) {
+    Serial.println("Settings saved");
+    yield();
+  } else {
+    Serial.println("failed to save json config");
+  }
   jsonFile.close();
 }
 
