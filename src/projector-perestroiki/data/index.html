@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Big flashlight 0</title>
+    <link href='main.css' rel='stylesheet' type='text/css'>
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="144x144"  href="/favicon-144x144.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon.ico">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#00878f">
+    <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport'>
+    <script src="WebSocket.js" type="text/javascript"></script>
+</head>
+
+<body>
+    <center>
+        <header>
+            <h1>Big flashlight 0</h1>
+        </header>
+			<p id="voltage">Battery level: <em>Waiting..</em></p>
+            <p style="margin:8px 0px"><button id="offButton" class="button" style="background-color:#999" onclick="preheat();">Off</button>
+            <button id="randomizeButton" class="button" style="background-color:#999" onclick="randomize();">Blink</button>
+            <button id="shineButton" class="button" style="background-color:#999" onclick="shine();">Shine</button></p>
+        
+            <table>
+				<tr>
+                    <td style="width:14.4px; text-align: right">Dim: </td>
+                    <td><input class="enabled" id="dimmer" type="range" min="30" max="900" step="1" oninput="useDimmer();" value="0"></td>
+                </tr>
+            <tr>
+                  <td style="width:14.4px; text-align: right">Max. blink brightness: </td>
+                  <td><input class="enabled" id="blinkMax" type="range" min="30" max="900" step="1" oninput="setBlinkMax();" value="0"></td>
+			</tr>
+			<tr>		
+					<td style="width:14.4px; text-align: right">Blink delay: </td>
+                  <td><input class="enabled" id="blinkRate" type="range" min="10" max="100" step="1" oninput="setBlinkRate();" value="0"></td>
+            </tr>
+            </table>
+        <p id="settingsMsg"></p>
+    </center>
+</body>
+</html>

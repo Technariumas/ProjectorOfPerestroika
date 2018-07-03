@@ -29,20 +29,16 @@ File fsUploadFile;                                    // a File variable to temp
 float voltage = 0;
 int sleepTime = 10;  //change to 5 minutes
 const int preheatValue = 30;
-int minBrightness = preheatValue;
-int maxBrightness = 500;
-int brightness = maxBrightness;
-int timeStep = 3;
-int blinkSpeed = timeStep;
-int randomStep = 5;
-int blinkRandomness = 0;
 int maxBrightnessLimit = 900;
-int brightnessStep = 5;
+
+int maxBrightness = 3;
+int brightness = preheatValue;
+int blinkRate = 50;
 String state = "OFF";
 unsigned long prevMillis = millis();
+
 unsigned long previousMillis = 0;
 unsigned long currentMillis = 0;
-byte fadeDirection = UP;
 int batteryCheckStep = 20000;
 
 void loadWiFiSettings();
@@ -101,35 +97,12 @@ void loop() {
     Serial.println("Going to sleep");
     ESP.deepSleep(1000000*sleepTime); 
     }
-  else if (state == "PAUSE") {
+    else if (state == "SHINE") {
     shine(brightness);
     }
-  else if (state == "PLAY") {
-      currentMillis = millis();
-      int currentBrightness = brightness;
-      if (currentMillis - previousMillis >= timeStep) {
-         previousMillis = currentMillis;
-         if (fadeDirection == DOWN) {
-         brightness = brightness - brightnessStep;
-         shine(brightness);
-         }
-         }
-       if(brightness < minBrightness) {
-          yield();
-          fadeDirection = UP;
-          shine(minBrightness);
-          timeStep = blinkSpeed + random(blinkRandomness);
-      }
-       if (fadeDirection == UP) {
-        while(brightness < maxBrightness) {
-            brightness = brightness + brightnessStep;
-            shine(brightness); 
-            delay(2);
-            yield();
-            }  
-         fadeDirection = DOWN; 
-        }
-  } 
+  else if (state == "BLINK") {
+    startFlicker();
+  }
   else {
     Serial.println("Error");
     }
@@ -148,10 +121,7 @@ void loadSettings() {
     JsonObject& root = jsonSettingsBuffer.parseObject(jsonFile);
     if (root.success()) {
       maxBrightness = root["maxBrightness"]; 
-      minBrightness = root["minBrightness"]; 
-      blinkSpeed = root["blinkSpeed"]; 
-      blinkRandomness = root["blinkRandomness"]; 
-
+      blinkRate = root["blinkRate"]; 
       root.printTo(Serial);
       yield();
       size_t s = root.printTo(settingsBuf, sizeof(settingsBuf));
@@ -209,9 +179,7 @@ void saveSettings() {
   jsonSettingsBuffer.clear();
   JsonObject& settingsRoot = jsonSettingsBuffer.createObject();
   settingsRoot["maxBrightness"] = maxBrightness;
-  settingsRoot["minBrightness"] = minBrightness;
-  settingsRoot["blinkSpeed"] = blinkSpeed;
-  settingsRoot["blinkRandomness"] = blinkRandomness;
+  settingsRoot["blinkRate"] = blinkRate;
   File jsonFile = SPIFFS.open(settingsFile, "w");
   yield();
   settingsRoot.printTo(jsonFile);
@@ -225,18 +193,23 @@ void saveSettings() {
 }
 
 void startPreheat() {
-  brightness = minBrightness;
-  randomSeed(3);
-  fadeDirection = UP;
   digitalWrite(LAMP, LOW); 
   }
- 
+
+ void startFlicker() {
+    int v = 22 + random(maxBrightness);
+    shine(v);
+    //Serial.println("Blinking");
+    //Serial.println(blinkRate);
+    for(int i = 0; i < random(blinkRate); i++){
+      delay(10);
+      webSocket.loop();
+    }
+  }
 
 void shine(int brightness) {
-          
           if(brightness < preheatValue) {
           analogWrite(LAMP,  preheatValue);
-                  
         } else if(brightness > maxBrightnessLimit) {
           analogWrite(LAMP, maxBrightnessLimit);
         } else {
@@ -391,11 +364,15 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       break;
     case WStype_TEXT:                     // if new text data is received
       Serial.printf("[%u] get Text: %s\n", num, payload);
-      if (payload[0] == 'P') {
-          state = "PAUSE";
+      if (payload[0] == '#') {            // we get brightness data
+        uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
+        brightness =          val & 0x3FF;                      // B: bits  0-9
+        }
+        else if (payload[0] == 'H') {
+          state = "SHINE";
         }
         else if (payload[0] == 'B') {
-          state = "PLAY";
+          state = "BLINK";
         }
       if (payload[0] == 'L') {
           loadSettings();
@@ -407,17 +384,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
         uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
         maxBrightness =          val & 0x3FF;                      // B: bits  0-9
       }
-        else if (payload[0] == '#') {                      // the browser sends a * when the flicker effect is enabled
+        else if (payload[0] == '_') {                      // the browser sends a * when the flicker effect is enabled
         uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
-        minBrightness =          val & 0x3FF;                      // B: bits  0-9
-      }
-        else if (payload[0] == '^') {                      // the browser sends a * when the flicker effect is enabled
-        uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
-        blinkSpeed =          val & 0x3FF;                      // B: bits  0-9
-      }
-      else if (payload[0] == '_') {                      // the browser sends a * when the flicker effect is enabled
-        uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
-        blinkRandomness =          val & 0x3FF;                      // B: bits  0-9
+        blinkRate =          val & 0x3FF;                      // B: bits  0-9
       }
        else if (payload[0] == 'O') {                      // the browser sends an O when the preheat mode is on
         state = "OFF";
