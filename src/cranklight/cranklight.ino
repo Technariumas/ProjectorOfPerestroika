@@ -11,9 +11,9 @@ ESP8266WebServer server(80);       // create a web server on port 80
 
 WebSocketsServer webSocket = WebSocketsServer(81);    // create a websocket server on port 81
 
-const char *ssid = "cranklight6"; // The name of the Wi-Fi network that will be created
+const char *ssid = "cranklight1"; // The name of the Wi-Fi network that will be created
 const char *password = "cranklight";   // The password required to connect to it, leave blank for an open network
-
+const char *mdnsName = "cranklight1"; // Domain name for the mDNS responder
 
 File fsUploadFile;                                    // a File variable to temporarily store the received file
 
@@ -25,7 +25,6 @@ File fsUploadFile;                                    // a File variable to temp
 float voltage = 0;
 int sleepTime = 10;  //change to 5 minutes
 
-const char* mdnsName = "projector"; // Domain name for the mDNS responder
 void startWiFi();
 void startSPIFFS();               
 void startWebSocket();            
@@ -70,7 +69,7 @@ String state = "OFF";
 unsigned long prevMillis = millis();
 unsigned long previousMillis = 0;
 byte fadeDirection = UP;
-int batteryCheckStep = 20000;
+int batteryCheckStep = 200;
 
 
 void loop() {
@@ -79,6 +78,7 @@ void loop() {
   if(millis() > prevMillis + batteryCheckStep) { 
     voltage = 4*(analogRead(A0)/1023.0);
     sendVoltage(voltage);
+    Serial.println(voltage);
     if (voltage < 0.80) {
     state = "LOW";
     }
