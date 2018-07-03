@@ -11,9 +11,9 @@ ESP8266WebServer server(80);       // create a web server on port 80
 
 WebSocketsServer webSocket = WebSocketsServer(81);    // create a websocket server on port 81
 
-const char *ssid = "cranklight1"; // The name of the Wi-Fi network that will be created
+const char *ssid = "cranklightBig"; // The name of the Wi-Fi network that will be created
 const char *password = "cranklight";   // The password required to connect to it, leave blank for an open network
-const char *mdnsName = "cranklight1"; // Domain name for the mDNS responder
+const char *mdnsName = "projector"; // Domain name for the mDNS responder
 
 File fsUploadFile;                                    // a File variable to temporarily store the received file
 
