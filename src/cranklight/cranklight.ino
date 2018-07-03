@@ -6,15 +6,13 @@
 #include <ESP8266mDNS.h>
 #include <WebSocketsServer.h>
 
-#define WEBSOCKETS_SERVER_CLIENT_MAX 1
-
 ESP8266WiFiMulti wifiMulti;       // Create an instance of the ESP8266WiFiMulti class, called 'wifiMulti'
 ESP8266WebServer server(80);       // create a web server on port 80
 
 WebSocketsServer webSocket = WebSocketsServer(81);    // create a websocket server on port 81
 
-const char *ssid = "cranklight0"; // The name of the Wi-Fi network that will be created
-const char *password = "cranklight";   // The password required to connect to it, leave blank for an open network
+char ssid[12] = ""; // The name of the Wi-Fi network that will be created
+char password[11] = "";   // The password required to connect to it, leave blank for an open network
 
 
 File fsUploadFile;                                    // a File variable to temporarily store the received file
@@ -26,6 +24,8 @@ File fsUploadFile;                                    // a File variable to temp
 #define LED_RED D3
 #define LED_GREEN D4
 #define settingsFile  "/settings.json"
+#define wifiSettingsFile  "/wifiSettings.json"
+
 float voltage = 0;
 int sleepTime = 10;  //change to 5 minutes
 const int preheatValue = 30;
@@ -45,8 +45,7 @@ unsigned long currentMillis = 0;
 byte fadeDirection = UP;
 int batteryCheckStep = 20000;
 
-
-const char* mdnsName = "projector"; // Domain name for the mDNS responder
+void loadWiFiSettings();
 void startWiFi();
 void startSPIFFS();               
 void startWebSocket();            
@@ -58,7 +57,6 @@ void setup() {
   pinMode(LED_GREEN, OUTPUT);
   digitalWrite(LED_RED, LOW);
   digitalWrite(LED_GREEN, LOW);
-
   randomSeed(3);
   pinMode(LAMP, OUTPUT);    // the pins with LEDs connected are outputs
   digitalWrite(LAMP, LOW);
@@ -69,11 +67,10 @@ void setup() {
 
   analogWriteFreq(20000);
   //analogWriteRange(1023);
-  
-  startWiFi();                 // Start a Wi-Fi access point, and try to connect to some given access points. Then wait for either an AP or STA connection
-  
-  
   startSPIFFS();               // Start the SPIFFS and list all contents
+  loadWiFiSettings();
+    
+  startWiFi();                 // Start a Wi-Fi access point, and try to connect to some given access points. Then wait for either an AP or STA connection
 
   startWebSocket();            // Start a WebSocket server
   
@@ -86,7 +83,6 @@ void setup() {
 
 
 void loop() {
-  Serial.println("websocket loop");
   webSocket.loop();                           // constantly check for websocket events
   server.handleClient();
   if(millis() > prevMillis + batteryCheckStep) { 
@@ -139,7 +135,7 @@ void loop() {
        if (fadeDirection == UP) {
         while(brightness < maxBrightness) {
             brightness = brightness + brightnessStep;
-            Serial.print("Down, ");
+            Serial.print("Up, ");
             Serial.println(brightness);
             shine(brightness); 
             delay(2);
@@ -162,10 +158,8 @@ void loadSettings() {
   // parse json config file
   File jsonFile = SPIFFS.open(settingsFile, "r");
   if (jsonFile) {
-    
     jsonSettingsBuffer.clear();
     JsonObject& root = jsonSettingsBuffer.parseObject(jsonFile);
-    
     if (root.success()) {
       maxBrightness = root["maxBrightness"]; 
       minBrightness = root["minBrightness"]; 
@@ -186,6 +180,34 @@ void loadSettings() {
     }
     jsonFile.close();
   }
+}
+
+//WiFi settings file
+
+const size_t wifiBufferSize = JSON_OBJECT_SIZE(2) + 80;
+StaticJsonBuffer<wifiBufferSize> wifiSettingsBuffer;
+
+void loadWiFiSettings() {
+  // parse json config file
+  File jsonFile = SPIFFS.open(wifiSettingsFile, "r");
+  Serial.println(wifiSettingsFile);
+  if (jsonFile) {
+    jsonSettingsBuffer.clear();
+    JsonObject& root = wifiSettingsBuffer.parseObject(jsonFile);
+    if (root.success()) {
+      strcpy(ssid, root["ssid"]); 
+      strcpy(password, root["password"]); 
+      root.printTo(Serial);
+      Serial.println("WiFi settings loaded");
+      yield();
+    }  else {
+      Serial.println("failed to load WiFi config");
+    }
+    jsonFile.close();
+  }
+  else {
+    Serial.println("No WiFi settings file");
+    }
 }
 
 const size_t voltageBufferSize = JSON_OBJECT_SIZE(1);
@@ -209,7 +231,6 @@ void saveSettings() {
   settingsRoot["minBrightness"] = minBrightness;
   settingsRoot["blinkSpeed"] = blinkSpeed;
   settingsRoot["blinkRandomness"] = blinkRandomness;
-  
   File jsonFile = SPIFFS.open(settingsFile, "w");
   yield();
   settingsRoot.printTo(jsonFile);
@@ -255,6 +276,7 @@ WiFiEventHandler stationDisconnectedHandler;
 void startWiFi() { // Start a Wi-Fi access point, and try to connect to some given access points. Then wait for either an AP or STA connection
   while(!WiFi.softAP(ssid, password)) {             // Start the access point
     Serial.println("Starting AP");
+    Serial.println(ssid);
     delay(100);
   }
   stationConnectedHandler = WiFi.onSoftAPModeStationConnected(&onStationConnected);
@@ -301,9 +323,9 @@ void startWebSocket() { // Start a WebSocket server
 }
 
 void startMDNS() { // Start the mDNS responder
-  MDNS.begin(mdnsName);                        // start the multicast domain name server
+  MDNS.begin(ssid);                        // start the multicast domain name server
   Serial.print("mDNS responder started: http://");
-  Serial.print(mdnsName);
+  Serial.print(ssid);
   Serial.println(".local");
 }
 
