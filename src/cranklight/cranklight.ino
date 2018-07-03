@@ -87,7 +87,6 @@ void loop() {
   server.handleClient();
   if(millis() > prevMillis + batteryCheckStep) { 
     voltage = 4*(analogRead(A0)/1023.0);
-    Serial.println("Sending voltage");
     sendVoltage(voltage);
     if (voltage < 0.80) {
       state = "LOW";
@@ -103,8 +102,6 @@ void loop() {
     ESP.deepSleep(1000000*sleepTime); 
     }
   else if (state == "PAUSE") {
-    Serial.println("Paused");
-
     shine(brightness);
     }
   else if (state == "PLAY") {
@@ -113,16 +110,8 @@ void loop() {
       if (currentMillis - previousMillis >= timeStep) {
          previousMillis = currentMillis;
          if (fadeDirection == DOWN) {
-         Serial.print("Down, ");
-         Serial.println(brightness);
          brightness = brightness - brightnessStep;
          shine(brightness);
-           /* Serial.print(minBrightness);
-            Serial.print(",");
-            Serial.print(brightness);
-            Serial.print(",");
-            Serial.println(maxBrightness);*/
-
          }
          }
        if(brightness < minBrightness) {
@@ -130,13 +119,10 @@ void loop() {
           fadeDirection = UP;
           shine(minBrightness);
           timeStep = blinkSpeed + random(blinkRandomness);
-          Serial.println("turning round");
       }
        if (fadeDirection == UP) {
         while(brightness < maxBrightness) {
             brightness = brightness + brightnessStep;
-            Serial.print("Up, ");
-            Serial.println(brightness);
             shine(brightness); 
             delay(2);
             yield();
@@ -167,12 +153,10 @@ void loadSettings() {
       blinkRandomness = root["blinkRandomness"]; 
 
       root.printTo(Serial);
-      Serial.println("Settings loaded");
       yield();
       size_t s = root.printTo(settingsBuf, sizeof(settingsBuf));
       yield();
       webSocket.sendTXT(0, settingsBuf, s);
-      Serial.println("Settings sent via websockets");
       yield();
       yield();
     }  else {
@@ -190,7 +174,6 @@ StaticJsonBuffer<wifiBufferSize> wifiSettingsBuffer;
 void loadWiFiSettings() {
   // parse json config file
   File jsonFile = SPIFFS.open(wifiSettingsFile, "r");
-  Serial.println(wifiSettingsFile);
   if (jsonFile) {
     jsonSettingsBuffer.clear();
     JsonObject& root = wifiSettingsBuffer.parseObject(jsonFile);
@@ -198,7 +181,6 @@ void loadWiFiSettings() {
       strcpy(ssid, root["ssid"]); 
       strcpy(password, root["password"]); 
       root.printTo(Serial);
-      Serial.println("WiFi settings loaded");
       yield();
     }  else {
       Serial.println("failed to load WiFi config");
@@ -221,7 +203,6 @@ void sendVoltage(float voltage) {
   size_t s = voltageRoot.printTo(voltageBuf, sizeof(voltageBuf));
   webSocket.sendTXT(0, voltageBuf, s);
   voltageRoot.printTo(Serial);
-  Serial.println(" Voltage sent");
 }
 
 void saveSettings() {
@@ -237,7 +218,6 @@ void saveSettings() {
   yield();
   if (settingsRoot.success()) {
     settingsRoot.printTo(Serial);
-    Serial.println("Settings saved");
   } else {
     Serial.println("failed to save json config");
   }
@@ -255,17 +235,12 @@ void startPreheat() {
 void shine(int brightness) {
           
           if(brightness < preheatValue) {
-          Serial.println("before digital write low");
-          //digitalWrite(LAMP, LOW);
           analogWrite(LAMP,  preheatValue);
-          Serial.println("after digital write low");
                   
         } else if(brightness > maxBrightnessLimit) {
-          Serial.println("before digital write high");
           analogWrite(LAMP, maxBrightnessLimit);
         } else {
           analogWrite(LAMP,  brightness);
-          Serial.println(brightness);
         }
 }
 
@@ -276,7 +251,6 @@ WiFiEventHandler stationDisconnectedHandler;
 void startWiFi() { // Start a Wi-Fi access point, and try to connect to some given access points. Then wait for either an AP or STA connection
   while(!WiFi.softAP(ssid, password)) {             // Start the access point
     Serial.println("Starting AP");
-    Serial.println(ssid);
     delay(100);
   }
   stationConnectedHandler = WiFi.onSoftAPModeStationConnected(&onStationConnected);
