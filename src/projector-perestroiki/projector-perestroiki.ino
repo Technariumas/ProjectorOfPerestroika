@@ -39,8 +39,8 @@ unsigned long prevMillis = millis();
 
 unsigned long previousMillis = 0;
 unsigned long currentMillis = 0;
-int batteryCheckStep = 10000;
-float dcf = 0.8;
+int batteryCheckStep = 60*1000;
+float dcf = 0.8; //initial duty cycle factor
 
 
 void loadWiFiSettings();
@@ -204,7 +204,9 @@ void saveSettings() {
 }
 
 void startPreheat() {
+  Serial.println("start preheat");
   digitalWrite(LAMP, LOW); 
+  Serial.println("stop preheat");
   }
 
  void startFlicker() {

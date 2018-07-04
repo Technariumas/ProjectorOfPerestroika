@@ -1,4 +1,4 @@
-voltageFactor = 3.6;
+voltageFactor = 3.5;
 
 function saveSettings(){
 	connection.send("S");
