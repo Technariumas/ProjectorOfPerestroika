@@ -63,8 +63,7 @@ void setup() {
   delay(10);
   Serial.println("\r\n");
 
-  analogWriteFreq(20000);
-  //analogWriteRange(1023);
+//  analogWriteFreq(20000);
   startSPIFFS();               // Start the SPIFFS and list all contents
   loadWiFiSettings();
     
