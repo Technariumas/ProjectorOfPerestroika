@@ -89,8 +89,6 @@ void loop() {
     voltage = 8*(analogRead(A0)/1023.0);
     sendVoltage(voltage);
     calculateDutyCycleFactor(voltage);
-    Serial.println("Duty cycle factor");
-    Serial.println(dcf);
     if (voltage < 1.84) {
       state = "LOW";
     }
@@ -118,7 +116,6 @@ void loop() {
 
 void calculateDutyCycleFactor(float voltage) { //1.84 -- A0 measurement at 6.4V, nominal lamp voltage
   dcf = 1./(voltage/1.84);
-  Serial.println(dcf);
   }
 
 const size_t settingsBufferSize = JSON_OBJECT_SIZE(4) + 80;

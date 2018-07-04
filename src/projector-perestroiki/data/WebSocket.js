@@ -1,4 +1,4 @@
-voltageFactor = 3.5;
+voltageFactor = 3.6;
 
 function saveSettings(){
 	connection.send("S");
@@ -106,7 +106,7 @@ function parseVoltage(voltage) {
 		var val = Number(voltage);
 		console.log("voltage: "+voltage);
 		console.log("voltage: "+voltage);
-		if (val < 0.83) {
+		if (val < 1.83) {
 			warnVoltage((voltageFactor*val).toPrecision(2));
 			}
 		else {
