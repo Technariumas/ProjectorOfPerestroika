@@ -63,7 +63,7 @@ void setup() {
   delay(10);
   Serial.println("\r\n");
 
-  analogWriteFreq(20000);
+  analogWriteFreq(18000);
   //analogWriteRange(1023);
   startSPIFFS();               // Start the SPIFFS and list all contents
   loadWiFiSettings();
@@ -205,7 +205,7 @@ void saveSettings() {
 
 void startPreheat() {
   Serial.println("start preheat");
-  digitalWrite(LAMP, LOW); 
+  shine(30); 
   Serial.println("stop preheat");
   }
 
