@@ -110,6 +110,12 @@ void loop() {
   else if (state == "BLINK") {
     startFlicker();
   }
+  else if (state == "DISC") {
+    Serial.println("DISCONNECT websocket");
+    //webSocket.stop();
+    //webSocket.disconnect();
+    state = "OFF";
+    }
   else {
     Serial.println("Error");
     }
@@ -257,16 +263,26 @@ void startWiFi() { // Start a Wi-Fi access point, and try to connect to some giv
   Serial.println(WiFi.softAPIP());
 }
 
+
 void onStationConnected(const WiFiEventSoftAPModeStationConnected& evt) {
   Serial.print("Client connected: ");
+  Serial.println(macToString(evt.mac));
   digitalWrite(LED_GREEN, HIGH);
 }
 
 void onStationDisconnected(const WiFiEventSoftAPModeStationDisconnected& evt) {
   Serial.print("Client disconnected: ");
+   Serial.println(macToString(evt.mac));
   digitalWrite(LED_GREEN, LOW);
+  state = "DISC";
 }
 
+String macToString(const unsigned char* mac) {
+  char buf[20];
+  snprintf(buf, sizeof(buf), "%02x:%02x:%02x:%02x:%02x:%02x",
+           mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+  return String(buf);
+}
 
 String formatBytes(size_t bytes);
 
@@ -381,7 +397,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     case WStype_CONNECTED: {              // if a new websocket connection is established
         IPAddress ip = webSocket.remoteIP(num);
         Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
-        state = "OFF";                  // Turn flicker off when a new connection is established
+        //state = "OFF";                  // Turn flicker off when a new connection is established
         loadSettings();
       }
       break;

@@ -1,4 +1,13 @@
 voltageFactor = 3.5;
+var connection = new WebSocket('ws://'+location.hostname+':81/', ['arduino']);
+
+
+window.onbeforeunload = closeWebsocket;
+function closeWebsocket(){
+    alert("closeWebsocket");
+    connection.close();
+    return false;
+}
 
 function saveSettings(){
 	connection.send("S");
@@ -14,11 +23,12 @@ function clearSettingsMsg() {
 	document.getElementById('settingsMsg').innerHTML = "";
 	}
 
-var connection = new WebSocket('ws://'+location.hostname+':81/', ['arduino']);
 connection.onopen = function () {
     connection.send('Connect ' + new Date());
 };
 connection.onerror = function (error) {
+	alert("Connection error. Disconnect all other devices!");
+	document.getElementById('settingsMsg').innerHTML = "Connection error"+error;
     console.log('WebSocket Error ', error);
 };
 
@@ -43,6 +53,7 @@ connection.onmessage = function (e) {
 
 connection.onclose = function(){
     console.log('WebSocket connection closed');
+    document.getElementById('settingsMsg').innerHTML = "Connection closed";
 };
 
 function useDimmer() {
