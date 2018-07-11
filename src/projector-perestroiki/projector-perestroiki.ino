@@ -26,6 +26,8 @@ File fsUploadFile;                                    // a File variable to temp
 #define settingsFile  "/settings.json"
 #define wifiSettingsFile  "/wifiSettings.json"
 
+int wifiChannel = 6;
+
 float voltage = 0;
 int sleepTime = 10;  //change to 5 minutes
 const int preheatValue = 30;
@@ -39,13 +41,12 @@ unsigned long prevMillis = millis();
 
 unsigned long previousMillis = 0;
 unsigned long currentMillis = 0;
-int batteryCheckStep = 60*1000;
+int batteryCheckStep = 30*1000;
 float dcf = 0.8; //initial duty cycle factor
 
-
+void startSPIFFS();  
 void loadWiFiSettings();
 void startWiFi();
-void startSPIFFS();               
 void startWebSocket();            
 void startMDNS();                 
 void startServer();
@@ -118,7 +119,7 @@ void calculateDutyCycleFactor(float voltage) { //1.84 -- A0 measurement at 6.4V,
   dcf = 1./(voltage/1.84);
   }
 
-const size_t settingsBufferSize = JSON_OBJECT_SIZE(4) + 80;
+const size_t settingsBufferSize = JSON_OBJECT_SIZE(3) + 80;
 StaticJsonBuffer<settingsBufferSize> jsonSettingsBuffer;
 char settingsBuf[settingsBufferSize];
 
@@ -144,6 +145,8 @@ void loadSettings() {
     }
     jsonFile.close();
   }
+  else {
+    Serial.println("failed to load settings file");}
 }
 
 //WiFi settings file
@@ -191,23 +194,29 @@ void saveSettings() {
   settingsRoot["brightness"] = brightness;
   settingsRoot["maxBrightness"] = maxBrightness;
   settingsRoot["blinkRate"] = blinkRate;
+  Serial.println("opening file");
   File jsonFile = SPIFFS.open(settingsFile, "w");
-  yield();
-  settingsRoot.printTo(jsonFile);
-  yield();
-  if (settingsRoot.success()) {
-    settingsRoot.printTo(Serial);
-  } else {
+  if (jsonFile) {
+    yield();
+    settingsRoot.printTo(jsonFile);
+    yield();
+    if (settingsRoot.success()) {
+      settingsRoot.printTo(Serial);
+    } 
+    else {
     Serial.println("failed to save json config");
-  }
+    }
   jsonFile.close();
+  }
+  else {
+    Serial.println("failed to open settingsFile for writing");
+    }
 }
 
+
 void startPreheat() {
-  Serial.println("start preheat");
-  shine(30); 
-  Serial.println("stop preheat");
-  }
+  digitalWrite(LAMP, LOW); 
+  }  
 
  void startFlicker() {
     int v = 22 + random(maxBrightness);
@@ -235,7 +244,7 @@ WiFiEventHandler stationConnectedHandler;
 WiFiEventHandler stationDisconnectedHandler;
 
 void startWiFi() { // Start a Wi-Fi access point, and try to connect to some given access points. Then wait for either an AP or STA connection
-  while(!WiFi.softAP(ssid, password)) {             // Start the access point
+  while(!WiFi.softAP(ssid, password, wifiChannel)) {             // Start the access point
     Serial.println("Starting AP");
     delay(100);
   }
@@ -391,6 +400,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           loadSettings();
         }
         else if (payload[0] == 'S') {
+          Serial.print("save settings command received");
           saveSettings();
         }        
         else if (payload[0] == '*') {                      // the browser sends a * when the flicker effect is enabled
