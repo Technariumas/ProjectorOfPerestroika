@@ -66,6 +66,7 @@ void setup() {
 
   analogWriteFreq(18000);
   //analogWriteRange(1023);
+
   startSPIFFS();               // Start the SPIFFS and list all contents
   loadWiFiSettings();
     
