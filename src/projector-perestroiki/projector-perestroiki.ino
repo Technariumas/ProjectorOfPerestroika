@@ -26,7 +26,7 @@ File fsUploadFile;                                    // a File variable to temp
 #define settingsFile  "/settings.json"
 #define wifiSettingsFile  "/wifiSettings.json"
 
-int wifiChannel = 6;
+int wifiChannel = 3;
 
 float voltage = 0;
 int sleepTime = 10;  //change to 5 minutes
@@ -193,6 +193,7 @@ void sendVoltage(float voltage) {
   size_t s = voltageRoot.printTo(voltageBuf, sizeof(voltageBuf));
   webSocket.sendTXT(0, voltageBuf, s);
   voltageRoot.printTo(Serial);
+  Serial.println("");
 }
 
 void saveSettings() {
@@ -251,7 +252,7 @@ WiFiEventHandler stationConnectedHandler;
 WiFiEventHandler stationDisconnectedHandler;
 
 void startWiFi() { // Start a Wi-Fi access point, and try to connect to some given access points. Then wait for either an AP or STA connection
-  while(!WiFi.softAP(ssid, password, wifiChannel)) {             // Start the access point
+  while(!WiFi.softAP(ssid, password, wifiChannel, false, 1)) {             // Start the access point
     Serial.println("Starting AP");
     delay(100);
   }
@@ -267,6 +268,7 @@ void startWiFi() { // Start a Wi-Fi access point, and try to connect to some giv
 void onStationConnected(const WiFiEventSoftAPModeStationConnected& evt) {
   Serial.print("Client connected: ");
   Serial.println(macToString(evt.mac));
+  //webSocket.sendTXT(0, settingsBuf, s);
   digitalWrite(LED_GREEN, HIGH);
 }
 
