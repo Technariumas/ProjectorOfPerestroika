@@ -31,20 +31,29 @@ int sleepTime = 10;  //change to 5 minutes
 const int preheatValue = 30;
 int minBrightness = preheatValue;
 int maxBrightness = 500;
-int brightness = maxBrightness;
+int brightness = preheatValue;//replace back to maxBrightness, set fade start brightness via websocket event
 int timeStep = 3;
 int blinkSpeed = timeStep;
 int randomStep = 5;
 int blinkRandomness = 0;
 int maxBrightnessLimit = 900;
 int brightnessStep = 5;
-String state = "OFF";
+String state = "FADEIN100"; //replace to default
 unsigned long prevMillis = millis();
 unsigned long previousMillis = 0;
 unsigned long currentMillis = 0;
-byte fadeDirection = UP;
-int batteryCheckStep = 20000;
+unsigned long prevFadeMillis = 0;
 
+int fadeInTimeStep = 1;
+int fadeOutTimeStep = 1;
+int fadeoutBrightness = maxBrightnessLimit;
+int currentFadeMillis = 0;
+int fadeBrightness = 30;
+int targetBrightness = 100;
+byte fadeDirection = UP;
+byte fadeState = UP;
+int batteryCheckStep = 20000;
+byte f_dir = UP;
 void loadWiFiSettings();
 void startWiFi();
 void startSPIFFS();               
@@ -65,7 +74,7 @@ void setup() {
   delay(10);
   Serial.println("\r\n");
 
-  analogWriteFreq(20000);
+  analogWriteFreq(1000);
   //analogWriteRange(1023);
   startSPIFFS();               // Start the SPIFFS and list all contents
   loadWiFiSettings();
@@ -78,10 +87,76 @@ void setup() {
 
   startServer();               // Start a HTTP server with a file read handler and an upload handler
 
-  loadSettings();
 }
 
+void fadeIn(int targetBrightness) {
+      Serial.print("fading in, brightness: ");
+      Serial.println(fadeBrightness);
+      Serial.println(targetBrightness);
+       if (f_dir == UP) {
+          yield();
+          fadeBrightness = fadeBrightness + brightnessStep;
+          shine(fadeBrightness);
+          if (fadeBrightness >= targetBrightness) {
+            f_dir = DOWN;
+            Serial.println("turnaround, target brightness: ");
+            Serial.println(targetBrightness);
+            }
+          }
+         if (f_dir == DOWN) {
+           if (fadeBrightness <= (targetBrightness - 60)) {
+              yield();
+              f_dir = UP;
+              Serial.println("lowest point");
+              targetBrightness = targetBrightness + 100;
+              Serial.println("lowest point");
 
+               if (targetBrightness >= 800) {
+                  targetBrightness = 100;
+                  fadeState = DOWN;
+                  maxShine(900, 2000);}
+                return;
+          }          
+       else {
+          fadeBrightness = fadeBrightness - brightnessStep;
+          shine(fadeBrightness);
+          }
+       }
+}
+
+void maxShine(int value, int duration) {
+  int startTime = prevFadeMillis;
+  int currentTime = millis();
+  Serial.print("start maxShine");
+  while (currentTime < (startTime + duration)) {
+    shine(value);
+    yield();
+    }
+    Serial.print("end maxShine");
+  }
+
+
+void fadein() {
+      int currentMillis = millis();
+      if ((currentMillis - previousMillis) >= fadeInTimeStep) {
+         brightness = brightness+4;
+         previousMillis = currentMillis;
+         shine(brightness);
+         }
+  }
+
+  
+void fadeout() {
+      int currentMillis = millis();
+      if ((currentMillis - previousMillis) >= fadeOutTimeStep) {
+         Serial.print("fadeout to: ");
+         Serial.println(targetBrightness);
+         brightness = brightness-1;
+         previousMillis = currentMillis;
+         shine(brightness);
+         }
+  }
+       
 void loop() {
   webSocket.loop();                           // constantly check for websocket events
   server.handleClient();
@@ -92,11 +167,133 @@ void loop() {
       state = "LOW";
     }
     prevMillis = millis();
+  }  
+  if (state == "OFF") {
+      startPreheat();
+       brightness = maxBrightness;       
+      //brightness = fadeoutBrightness;
+      }
+  else if (state == "FADEIN100") {
+    fadeInTimeStep = 2;
+    fadeOutTimeStep = 8;
+    targetBrightness = 100;
+    Serial.println("Fade in to 100");
+    if (brightness >= targetBrightness) {
+      state = "FADEOUT50";
+      }
+    else {
+      fadein();
+      }
+  }  
+  else if (state == "FADEOUT50") {
+        targetBrightness = 50;
+        if (brightness <= targetBrightness) {
+           state = "FADEIN200";
+        }
+        else {
+          fadeout();
+          }
+  }
+  else if (state == "FADEIN200") {
+    targetBrightness = 200;
+    Serial.println("Fade in to 200");
+    if (brightness >= targetBrightness) {
+      state = "FADEOUT150";
+      }
+    else {
+      fadein();
+      }
+  }  
+  else if (state == "FADEOUT150") {
+        targetBrightness = 150;
+        if (brightness <= targetBrightness) {
+           state = "FADEIN300";
+        }
+        else {
+          fadeout();
+          }
+  }
+  else if (state == "FADEIN300") {
+    targetBrightness = 300;
+    Serial.println("Fade in to 300");
+    if (brightness >= targetBrightness) {
+      state = "FADEOUT250";
+      }
+    else {
+      fadein();
+      }
+  }  
+  else if (state == "FADEOUT250") {
+        targetBrightness = 250;
+        if (brightness <= targetBrightness) {
+           state = "FADEIN400";
+        }
+        else {
+          fadeout();
+          }
   }
 
-  if (state == "OFF") {
-    startPreheat();
+    else if (state == "FADEIN400") {
+    targetBrightness = 400;
+    Serial.println("Fade in to 400");
+    if (brightness >= targetBrightness) {
+      state = "FADEOUT350";
+      }
+    else {
+      fadein();
+      }
+  }  
+  else if (state == "FADEOUT350") {
+        targetBrightness = 350;
+        if (brightness <= targetBrightness) {
+           state = "FADEIN600";
+        }
+        else {
+          fadeout();
+          }
   }
+  else if (state == "FADEIN600") {
+    fadeInTimeStep = 1;
+    targetBrightness = 600;
+    Serial.println("Fade in to 600");
+    if (brightness >= targetBrightness) {
+      state = "FADEOUT550";
+      }
+    else {
+      fadein();
+      }
+  }  
+  else if (state == "FADEOUT550") {
+        targetBrightness = 550;
+        if (brightness <= targetBrightness) {
+           state = "FADEIN900";
+        }
+        else {
+          fadeout();
+          }
+  }
+
+  else if (state == "FADEIN900") {
+    targetBrightness = 900;
+    Serial.println("Fade in to 900");
+    if (brightness >= targetBrightness) {
+      state = "SLOWFADEOUT";
+      }
+    else {
+      fadein();
+      }
+  } 
+    else if (state == "SLOWFADEOUT") {
+        fadeOutTimeStep = 6;
+        targetBrightness = preheatValue;
+        if (brightness <= targetBrightness) {
+           state = "FADEIN100";
+        }
+        else {
+          fadeout();
+          }
+  }
+  
   else if (state == "LOW") {
     Serial.println("Going to sleep");
     ESP.deepSleep(1000000*sleepTime); 
@@ -132,6 +329,7 @@ void loop() {
   } 
   else {
     Serial.println("Error");
+     Serial.println(state);
     }
  
  }
@@ -421,6 +619,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       }
        else if (payload[0] == 'O') {                      // the browser sends an O when the preheat mode is on
         state = "OFF";
+        brightness = maxBrightnessLimit;
       }
       break;
   }

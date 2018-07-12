@@ -6,7 +6,7 @@ var connection = new WebSocket('ws://'+location.hostname+':81/', ['arduino']);
 };
 connection.onerror = function (error) {
     console.log('WebSocket Error ', error);
-    alert("Connection error. Disconnect all other devices from cranklight1!");
+    alert("Connection error. Disconnect all other devices!");
 };
 
 connection.onmessage = function (e) {  
@@ -41,6 +41,7 @@ function preheat() {
 	document.getElementById('offButton').style.backgroundColor = '#00878F';
 	document.getElementById('playButton').style.backgroundColor = '#999';
 	document.getElementById('pauseButton').style.backgroundColor = '#999';
+    document.getElementById('fadeButton').style.backgroundColor = '#999';	
     //document.getElementById('dimmer').className = 'disabled';
     //document.getElementById('dimmer').disabled = true;
     //document.getElementById('blinkMax').className = 'disabled';
@@ -56,9 +57,22 @@ function play(){
     document.getElementById('offButton').style.backgroundColor = '#999';
     document.getElementById('playButton').style.backgroundColor = '#00878F';
 	document.getElementById('pauseButton').style.backgroundColor = '#999';
+    document.getElementById('fadeButton').style.backgroundColor = '#999';
     //document.getElementById('dimmer').className = 'disabled';
     //document.getElementById('dimmer').disabled = true; 
 }
+
+function fade() {
+	document.getElementById('fadeButton').className = 'enabled';
+	clearSettingsMsg();
+    document.getElementById('fadeButton').disabled = false;
+	connection.send("F");
+    document.getElementById('playButton').style.backgroundColor = '#999';
+    document.getElementById('offButton').style.backgroundColor = '#999';
+    document.getElementById('fadeButton').style.backgroundColor = '#00878F';
+	document.getElementById('pauseButton').style.backgroundColor = '#999';
+	
+	}
 
 function saveSettings(){
 	connection.send("S");
@@ -80,6 +94,7 @@ function pause(){
     document.getElementById('offButton').style.backgroundColor = '#999';
     document.getElementById('playButton').style.backgroundColor = '#999';
 	document.getElementById('pauseButton').style.backgroundColor = '#00878F';
+	document.getElementById('fadeButton').style.backgroundColor = '#999';
     //document.getElementById('dimmer').className = 'disabled';
     //document.getElementById('dimmer').disabled = true; 
 }
