@@ -75,7 +75,7 @@ void setup() {
   delay(10);
   Serial.println("\r\n");
 
-  analogWriteFreq(1000);
+  analogWriteFreq(2000);
   //analogWriteRange(1023);
   startSPIFFS();               // Start the SPIFFS and list all contents
   loadWiFiSettings();
@@ -128,8 +128,8 @@ void loop() {
       //brightness = fadeoutBrightness;
       }
   else if (state == "FADEIN100") {
-    fadeInTimeStep = 2;
-    fadeOutTimeStep = 8;
+    fadeInTimeStep = 8;
+    fadeOutTimeStep = 10;
     targetBrightness = 100;
     if (brightness >= targetBrightness) {
       state = "FADEOUT50";
@@ -203,7 +203,7 @@ void loop() {
           }
   }
   else if (state == "FADEIN600") {
-    fadeInTimeStep = 1;
+    fadeInTimeStep = 4;
     targetBrightness = 600;
     if (brightness >= targetBrightness) {
       state = "FADEOUT550";
@@ -232,7 +232,7 @@ void loop() {
       }
   } 
     else if (state == "SLOWFADEOUT") {
-        fadeOutTimeStep = 6;
+        fadeOutTimeStep = 10;
         targetBrightness = preheatValue;
         if (brightness <= targetBrightness) {
            state = "PAUSE";
