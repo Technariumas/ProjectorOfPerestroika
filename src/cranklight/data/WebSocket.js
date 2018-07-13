@@ -36,6 +36,13 @@ connection.onmessage = function (e) {
 	if(res.hasOwnProperty('blinkRandomness')) {
 		document.getElementById('blinkRandomness').value = res.blinkRandomness;
 	}
+	if(res.hasOwnProperty('fadeInDuration')) {
+		document.getElementById('fadeInDuration').value = res.fadeInDuration;
+	}
+	if(res.hasOwnProperty('fadeOutDuration')) {
+		document.getElementById('fadeOutDuration').value = res.fadeOutDuration;
+	}
+	
 	else console.log("Unexpected JSON message:", e.data,"end");
 };
 

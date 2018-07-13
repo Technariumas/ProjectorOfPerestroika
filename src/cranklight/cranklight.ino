@@ -75,7 +75,7 @@ void setup() {
   delay(10);
   Serial.println("\r\n");
 
-  analogWriteFreq(2000);
+  analogWriteFreq(3000);
   //analogWriteRange(1023);
   startSPIFFS();               // Start the SPIFFS and list all contents
   loadWiFiSettings();
@@ -282,7 +282,7 @@ void loop() {
  
  }
 
-const size_t settingsBufferSize = JSON_OBJECT_SIZE(4) + 80;
+const size_t settingsBufferSize = JSON_OBJECT_SIZE(6) + 80;
 StaticJsonBuffer<settingsBufferSize> jsonSettingsBuffer;
 char settingsBuf[settingsBufferSize];
 
@@ -297,7 +297,8 @@ void loadSettings() {
       minBrightness = root["minBrightness"]; 
       blinkSpeed = root["blinkSpeed"]; 
       blinkRandomness = root["blinkRandomness"]; 
-
+      fadeInSpeed = root["fadeInDuration"]; 
+      fadeOutSpeed = root["fadeOutDuration"]; 
       root.printTo(Serial);
       yield();
       size_t s = root.printTo(settingsBuf, sizeof(settingsBuf));
@@ -306,7 +307,7 @@ void loadSettings() {
       yield();
       yield();
     }  else {
-      Serial.println("failed to load json config");
+      Serial.println("failed to load JSON config");
     }
     jsonFile.close();
   }
@@ -358,6 +359,8 @@ void saveSettings() {
   settingsRoot["minBrightness"] = minBrightness;
   settingsRoot["blinkSpeed"] = blinkSpeed;
   settingsRoot["blinkRandomness"] = blinkRandomness;
+  settingsRoot["fadeInDuration"] = fadeInSpeed;
+  settingsRoot["fadeOutDuration"] = fadeOutSpeed;  
   File jsonFile = SPIFFS.open(settingsFile, "w");
   yield();
   settingsRoot.printTo(jsonFile);
