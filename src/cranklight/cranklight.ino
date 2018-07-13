@@ -38,7 +38,7 @@ int randomStep = 5;
 int blinkRandomness = 0;
 int maxBrightnessLimit = 900;
 int brightnessStep = 5;
-String state = "FADEIN100"; //replace to default
+String state = "OFF"; //replace to default
 unsigned long prevMillis = millis();
 unsigned long previousMillis = 0;
 unsigned long currentMillis = 0;
@@ -149,8 +149,6 @@ void fadein() {
 void fadeout() {
       int currentMillis = millis();
       if ((currentMillis - previousMillis) >= fadeOutTimeStep) {
-         Serial.print("fadeout to: ");
-         Serial.println(targetBrightness);
          brightness = brightness-1;
          previousMillis = currentMillis;
          shine(brightness);
@@ -177,7 +175,6 @@ void loop() {
     fadeInTimeStep = 2;
     fadeOutTimeStep = 8;
     targetBrightness = 100;
-    Serial.println("Fade in to 100");
     if (brightness >= targetBrightness) {
       state = "FADEOUT50";
       }
@@ -196,7 +193,6 @@ void loop() {
   }
   else if (state == "FADEIN200") {
     targetBrightness = 200;
-    Serial.println("Fade in to 200");
     if (brightness >= targetBrightness) {
       state = "FADEOUT150";
       }
@@ -215,7 +211,6 @@ void loop() {
   }
   else if (state == "FADEIN300") {
     targetBrightness = 300;
-    Serial.println("Fade in to 300");
     if (brightness >= targetBrightness) {
       state = "FADEOUT250";
       }
@@ -235,7 +230,6 @@ void loop() {
 
     else if (state == "FADEIN400") {
     targetBrightness = 400;
-    Serial.println("Fade in to 400");
     if (brightness >= targetBrightness) {
       state = "FADEOUT350";
       }
@@ -255,7 +249,6 @@ void loop() {
   else if (state == "FADEIN600") {
     fadeInTimeStep = 1;
     targetBrightness = 600;
-    Serial.println("Fade in to 600");
     if (brightness >= targetBrightness) {
       state = "FADEOUT550";
       }
@@ -275,9 +268,8 @@ void loop() {
 
   else if (state == "FADEIN900") {
     targetBrightness = 900;
-    Serial.println("Fade in to 900");
     if (brightness >= targetBrightness) {
-      state = "SLOWFADEOUT";
+      state = "PAUSE";
       }
     else {
       fadein();
@@ -287,7 +279,7 @@ void loop() {
         fadeOutTimeStep = 6;
         targetBrightness = preheatValue;
         if (brightness <= targetBrightness) {
-           state = "FADEIN100";
+           state = "PAUSE";
         }
         else {
           fadeout();
@@ -598,6 +590,12 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       if (payload[0] == 'L') {
           loadSettings();
         }
+         if (payload[0] == 'I') {
+          state = "FADEIN100";
+        }
+      if (payload[0] == 'U') {
+          state = "SLOWFADEOUT";
+        }        
         else if (payload[0] == 'S') {
           saveSettings();
         }        

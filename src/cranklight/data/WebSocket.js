@@ -1,4 +1,12 @@
 var voltageFactor = 3.7;
+var playStatus = 1;
+var fadeStatus = 1;
+window.onbeforeunload = closeWebsocket;
+
+function closeWebsocket(){
+    connection.close();
+    return false;
+}
 
 var connection = new WebSocket('ws://'+location.hostname+':81/', ['arduino']);
 	connection.onopen = function () {
@@ -6,7 +14,7 @@ var connection = new WebSocket('ws://'+location.hostname+':81/', ['arduino']);
 };
 connection.onerror = function (error) {
     console.log('WebSocket Error ', error);
-    alert("Connection error. Disconnect all other devices!");
+    alert("Connection error. Try disconnecting all other devices!");
 };
 
 connection.onmessage = function (e) {  
@@ -40,7 +48,6 @@ function preheat() {
 	clearSettingsMsg();
 	document.getElementById('offButton').style.backgroundColor = '#00878F';
 	document.getElementById('playButton').style.backgroundColor = '#999';
-	document.getElementById('pauseButton').style.backgroundColor = '#999';
     document.getElementById('fadeButton').style.backgroundColor = '#999';	
     //document.getElementById('dimmer').className = 'disabled';
     //document.getElementById('dimmer').disabled = true;
@@ -49,30 +56,84 @@ function preheat() {
 
 	}
 
+function handlePlayPause() {
+
+	if (playStatus == 1) {
+		play();
+		}
+	else if (playStatus == -1) {
+		pause();
+		}
+	else {
+		alert("Play button error");
+	}
+	playStatus = -1*playStatus;
+}
+
+
+
 function play(){
+	
+	document.getElementById('playButton').innerHTML = "Pause";
 	document.getElementById('blinkMax').className = 'enabled';
 	clearSettingsMsg();
     document.getElementById('blinkMax').disabled = false;
 	connection.send("B");
     document.getElementById('offButton').style.backgroundColor = '#999';
     document.getElementById('playButton').style.backgroundColor = '#00878F';
-	document.getElementById('pauseButton').style.backgroundColor = '#999';
     document.getElementById('fadeButton').style.backgroundColor = '#999';
+    
     //document.getElementById('dimmer').className = 'disabled';
     //document.getElementById('dimmer').disabled = true; 
 }
 
-function fade() {
-	document.getElementById('fadeButton').className = 'enabled';
+
+function pause(){
+	connection.send("P");
 	clearSettingsMsg();
+	document.getElementById('playButton').innerHTML = "Play";
+    document.getElementById('offButton').style.backgroundColor = '#999';
+    document.getElementById('playButton').style.backgroundColor = '#00878F';
+	document.getElementById('fadeButton').style.backgroundColor = '#999';
+    //document.getElementById('dimmer').className = 'disabled';
+    //document.getElementById('dimmer').disabled = true; 
+}
+
+
+function handleFadeInFadeOut() {
+
+	if (fadeStatus == 1) {
+		fadeIn();
+		}
+	else if (fadeStatus == -1) {
+		fadeOut();
+		}
+	else {
+		alert("Fade button error");
+	}
+	fadeStatus = -1*fadeStatus;
+}
+
+function fadeIn() {
+	connection.send("I");
+	clearSettingsMsg();
+	document.getElementById('fadeButton').innerHTML = "Fade Out";
     document.getElementById('fadeButton').disabled = false;
-	connection.send("F");
     document.getElementById('playButton').style.backgroundColor = '#999';
     document.getElementById('offButton').style.backgroundColor = '#999';
     document.getElementById('fadeButton').style.backgroundColor = '#00878F';
-	document.getElementById('pauseButton').style.backgroundColor = '#999';
-	
 	}
+	
+function fadeOut() {
+	connection.send("U");
+	clearSettingsMsg();
+	document.getElementById('fadeButton').innerHTML = "Fade In";
+    document.getElementById('fadeButton').disabled = false;
+    document.getElementById('playButton').style.backgroundColor = '#999';
+    document.getElementById('offButton').style.backgroundColor = '#999';
+    document.getElementById('fadeButton').style.backgroundColor = '#00878F';
+	}
+
 
 function saveSettings(){
 	connection.send("S");
@@ -88,16 +149,6 @@ function clearSettingsMsg() {
 	document.getElementById('settingsMsg').innerHTML = "";
 	}
 
-function pause(){
-	connection.send("P");
-	clearSettingsMsg();
-    document.getElementById('offButton').style.backgroundColor = '#999';
-    document.getElementById('playButton').style.backgroundColor = '#999';
-	document.getElementById('pauseButton').style.backgroundColor = '#00878F';
-	document.getElementById('fadeButton').style.backgroundColor = '#999';
-    //document.getElementById('dimmer').className = 'disabled';
-    //document.getElementById('dimmer').disabled = true; 
-}
 
 function setBlinkMax() {
    		var b = parseInt(document.getElementById('blinkMax').value);
