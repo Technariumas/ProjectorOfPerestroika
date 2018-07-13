@@ -46,6 +46,8 @@ unsigned long prevFadeMillis = 0;
 
 int fadeInTimeStep = 1;
 int fadeOutTimeStep = 1;
+int fadeInSpeed = 1;
+int fadeOutSpeed = 1;
 int fadeoutBrightness = maxBrightnessLimit;
 int currentFadeMillis = 0;
 int fadeBrightness = 30;
@@ -53,7 +55,6 @@ int targetBrightness = 100;
 byte fadeDirection = UP;
 byte fadeState = UP;
 int batteryCheckStep = 20000;
-byte f_dir = UP;
 void loadWiFiSettings();
 void startWiFi();
 void startSPIFFS();               
@@ -89,57 +90,12 @@ void setup() {
 
 }
 
-void fadeIn(int targetBrightness) {
-      Serial.print("fading in, brightness: ");
-      Serial.println(fadeBrightness);
-      Serial.println(targetBrightness);
-       if (f_dir == UP) {
-          yield();
-          fadeBrightness = fadeBrightness + brightnessStep;
-          shine(fadeBrightness);
-          if (fadeBrightness >= targetBrightness) {
-            f_dir = DOWN;
-            Serial.println("turnaround, target brightness: ");
-            Serial.println(targetBrightness);
-            }
-          }
-         if (f_dir == DOWN) {
-           if (fadeBrightness <= (targetBrightness - 60)) {
-              yield();
-              f_dir = UP;
-              Serial.println("lowest point");
-              targetBrightness = targetBrightness + 100;
-              Serial.println("lowest point");
-
-               if (targetBrightness >= 800) {
-                  targetBrightness = 100;
-                  fadeState = DOWN;
-                  maxShine(900, 2000);}
-                return;
-          }          
-       else {
-          fadeBrightness = fadeBrightness - brightnessStep;
-          shine(fadeBrightness);
-          }
-       }
-}
-
-void maxShine(int value, int duration) {
-  int startTime = prevFadeMillis;
-  int currentTime = millis();
-  Serial.print("start maxShine");
-  while (currentTime < (startTime + duration)) {
-    shine(value);
-    yield();
-    }
-    Serial.print("end maxShine");
-  }
-
 
 void fadein() {
       int currentMillis = millis();
       if ((currentMillis - previousMillis) >= fadeInTimeStep) {
-         brightness = brightness+4;
+         brightness = brightness+fadeInSpeed;
+         Serial.println(brightness);
          previousMillis = currentMillis;
          shine(brightness);
          }
@@ -149,7 +105,7 @@ void fadein() {
 void fadeout() {
       int currentMillis = millis();
       if ((currentMillis - previousMillis) >= fadeOutTimeStep) {
-         brightness = brightness-1;
+         brightness = brightness-fadeOutSpeed;
          previousMillis = currentMillis;
          shine(brightness);
          }
@@ -590,13 +546,25 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
       if (payload[0] == 'L') {
           loadSettings();
         }
-         if (payload[0] == 'I') {
+        else if (payload[0] == 'I') {
           brightness = preheatValue;
           state = "FADEIN100";
         }
-      if (payload[0] == 'U') {
+        else if (payload[0] == '+') {                      // the browser sends a * when the flicker effect is enabled
+        uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
+        Serial.print("Setting fadeinSpeed to: ");
+        Serial.println(val & 0x3FF);
+        fadeInSpeed =          val & 0x3FF;                      // B: bits  0-9
+      }
+        else if (payload[0] == 'U') {
           state = "SLOWFADEOUT";
-        }        
+        } 
+        else if (payload[0] == '-') {                      // the browser sends a * when the flicker effect is enabled
+        uint32_t val = (uint32_t) strtol((const char *) &payload[1], NULL, 16);   // decode brightness data
+        Serial.print("Setting fadeOutSpeed to: ");
+        Serial.println(val & 0x3FF);
+        fadeOutSpeed =          val & 0x3FF;                
+        }
         else if (payload[0] == 'S') {
           saveSettings();
         }        

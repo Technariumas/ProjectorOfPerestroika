@@ -23,7 +23,11 @@
             <button id="playButton" class="button" style="background-color:#999" onclick="debounce(handlePlayPause(), 250);">Play</button>
             <button id="fadeButton" class="button" style="background-color:#999" onclick="debounce(handleFadeInFadeOut(), 250);">Fade in</button>
             </p>
-        
+			<p id="settingsMsg"></p>
+            <p style="margin:8px 0px">
+				<button id="saveButton" class="button" style="background-color:#999" onclick="saveSettings();">Save</button>
+				<button id="loadButton" class="button" style="background-color:#999" onclick="loadSettings();">Load</button>
+            </p>
             <table>
 			<tr>
                   <td style="width:14.4px; text-align: left">Max. brightness: </td>
@@ -42,13 +46,17 @@
 					<td style="width:14.4px; text-align: left;">Blink randomness: </td>
                   <td><input class="enabled" id="blinkRandomness" type="range" min="0" max="10" step="1" oninput="setBlinkRandomness();" value="0"></td>
             </tr>
+			<tr>		
+					<td style="width:14.4px; text-align: left;">Fade-in duration: </td>
+                  <td><input class="enabled" id="fadeInDuration" type="range" min="1" max="10" step="1" oninput="setFadeInDuration();" value="0"></td>
+            </tr>
+			<tr>		
+					<td style="width:14.4px; text-align: left;">Fade-out duration: </td>
+                  <td><input class="enabled" id="fadeOutDuration" type="range" min="1" max="10" step="1" oninput="setFadeOutDuration();" value="0"></td>
+            </tr>            
+                        
             </table>
-            <p id="settingsMsg"></p>
-            <p style="margin:8px 0px">
-            <button id="saveButton" class="button" style="background-color:#999" onclick="saveSettings();">Save</button>
-            <button id="loadButton" class="button" style="background-color:#999" onclick="loadSettings();">Load</button>
-             
-            </p>
+ 
     </center>
 </body>
 </html>

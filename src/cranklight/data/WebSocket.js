@@ -66,6 +66,21 @@ function debounce(fun, mil){
     };
 }
 
+function setFadeInDuration(){
+	   	var b = parseInt(document.getElementById('fadeInDuration').value);
+		var str = '+'+ b.toString(16);    
+		console.log('Sending value: ' + str); 
+		connection.send(str);
+	}
+
+function setFadeOutDuration(){
+	   	var b = parseInt(document.getElementById('fadeOutDuration').value);
+		var str = '-'+ b.toString(16);    
+		console.log('Sending value: ' + str); 
+		connection.send(str);
+	}
+	
+
 function handlePlayPause() {
 
 	if (playStatus == 1) {
