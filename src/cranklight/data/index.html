@@ -20,8 +20,8 @@
 			    <p id="voltage">Battery level: <em>Waiting..</em></p>
             <p style="margin:8px 0px">
 			<button id="offButton" class="button" style="background-color:#999" onclick="preheat();">Off</button>
-            <button id="playButton" class="button" style="background-color:#999" onclick="handlePlayPause();">Play</button>
-            <button id="fadeButton" class="button" style="background-color:#999" onclick="handleFadeInFadeOut();">Fade in</button>
+            <button id="playButton" class="button" style="background-color:#999" onclick="debounce(handlePlayPause(), 250);">Play</button>
+            <button id="fadeButton" class="button" style="background-color:#999" onclick="debounce(handleFadeInFadeOut(), 250);">Fade in</button>
             </p>
         
             <table>

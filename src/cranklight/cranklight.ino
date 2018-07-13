@@ -591,6 +591,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
           loadSettings();
         }
          if (payload[0] == 'I') {
+          brightness = preheatValue;
           state = "FADEIN100";
         }
       if (payload[0] == 'U') {

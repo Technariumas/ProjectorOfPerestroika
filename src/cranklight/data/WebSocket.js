@@ -56,6 +56,16 @@ function preheat() {
 
 	}
 
+function debounce(fun, mil){
+    var timer; 
+    return function(){
+        clearTimeout(timer); 
+        timer = setTimeout(function(){
+            fun(); 
+        }, mil); 
+    };
+}
+
 function handlePlayPause() {
 
 	if (playStatus == 1) {
