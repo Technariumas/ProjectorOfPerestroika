@@ -9,8 +9,9 @@
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#00878f">
     <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport'>
+     <script src="reconnecting-websocket.js" type="text/javascript"></script>
     <script src="WebSocket.js" type="text/javascript"></script>
-</head>
+ </head>
 
 <body>
     <center>
@@ -19,13 +20,13 @@
         </header>
 			    <p id="voltage">Battery level: <em>Waiting..</em></p>
             <p style="margin:8px 0px">
-			<button id="offButton" class="button" style="background-color:#999" onclick="preheat();">Off</button>
+			<button id="offButton" class="button" style="background-color:#999" onclick="debounce(preheat(), 250);">Off</button>
             <button id="playButton" class="button" style="background-color:#999" onclick="debounce(handlePlayPause(), 250);">Play</button>
             <button id="fadeButton" class="button" style="background-color:#999" onclick="debounce(handleFadeInFadeOut(), 250);">Fade in</button>
             </p>
 			<p id="settingsMsg"></p>
             <p style="margin:8px 0px">
-				<button id="saveButton" class="button" style="background-color:#999" onclick="debounce(saveSettings(). 250);">Save</button>
+				<button id="saveButton" class="button" style="background-color:#999" onclick="debounce(saveSettings(), 250);">Save</button>
 				<button id="loadButton" class="button" style="background-color:#999" onclick="debounce(loadSettings(), 250);">Load</button>
             </p>
             <table>

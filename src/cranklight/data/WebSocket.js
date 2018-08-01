@@ -1,20 +1,29 @@
+//import ReconnectingWebSocket from 'reconnecting-websocket'
 var voltageFactor = 3.7;
 var playStatus = 1;
 var fadeStatus = 1;
-window.onbeforeunload = closeWebsocket;
 
-function closeWebsocket(){
-    connection.close();
-    return false;
-}
 
-var connection = new WebSocket('ws://'+location.hostname+':81/', ['arduino']);
+var loc = 'ws://'+location.hostname+':81/';
+
+var connection = new ReconnectingWebSocket(loc);
+	connection.debug = true;
+	connection.timeoutInterval = 5400;
 	connection.onopen = function () {
     connection.send('Connect ' + new Date());
 };
+
+
+connection.onclose = function(){
+    console.log('WebSocket connection closed');
+    document.getElementById('settingsMsg').innerHTML = "Connection closed";
+};
+
 connection.onerror = function (error) {
     console.log('WebSocket Error ', error);
     alert("Connection error. Try disconnecting all other devices!");
+    document.getElementById('settingsMsg').innerHTML = "Connection error"+error;
+    console.log('WebSocket Error ', error);
 };
 
 connection.onmessage = function (e) {  
@@ -46,9 +55,10 @@ connection.onmessage = function (e) {
 	else console.log("Unexpected JSON message:", e.data,"end");
 };
 
-connection.onclose = function(){
-    console.log('WebSocket connection closed');
-};
+function closeWebsocket(){
+    connection.close();
+    return false;
+}
 
 function preheat() {
 	connection.send("O");
@@ -238,3 +248,5 @@ function warnVoltage(voltage) {
 function clearVoltage() {
 	document.getElementById('voltage').style.backgroundColor = '#FFFFFF';
 	}		
+
+window.onbeforeunload = closeWebsocket;
