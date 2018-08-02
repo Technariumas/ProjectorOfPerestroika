@@ -10,7 +10,6 @@ ESP8266WiFiMulti wifiMulti;       // Create an instance of the ESP8266WiFiMulti 
 ESP8266WebServer server(80);       // create a web server on port 80
 
 WebSocketsServer webSocket = WebSocketsServer(81);    // create a websocket server on port 81
-
 char ssid[12] = ""; // The name of the Wi-Fi network that will be created
 char password[11] = "";   // The password required to connect to it, leave blank for an open network
 
@@ -55,9 +54,9 @@ int targetBrightness = 100;
 byte fadeDirection = UP;
 byte fadeState = UP;
 int batteryCheckStep = 20000;
+void startSPIFFS();  
 void loadWiFiSettings();
 void startWiFi();
-void startSPIFFS();               
 void startWebSocket();            
 void startMDNS();                 
 void startServer();
@@ -75,7 +74,7 @@ void setup() {
   delay(10);
   Serial.println("\r\n");
 
-  analogWriteFreq(3000);
+  analogWriteFreq(18000);
   //analogWriteRange(1023);
   startSPIFFS();               // Start the SPIFFS and list all contents
   loadWiFiSettings();
@@ -87,7 +86,9 @@ void setup() {
   startMDNS();                 // Start the mDNS responder
 
   startServer();               // Start a HTTP server with a file read handler and an upload handler
-
+  
+  loadSettings();
+  
 }
 
 
@@ -234,8 +235,12 @@ void loop() {
     else if (state == "SLOWFADEOUT") {
         fadeOutTimeStep = 10;
         targetBrightness = preheatValue;
+        Serial.println(brightness);
         if (brightness <= targetBrightness) {
-           state = "PAUSE";
+          Serial.println("lowest point");
+           //digitalWrite(LAMP, LOW);
+          startPreheat();
+          // state = "PAUSE";
         }
         else {
           fadeout();
@@ -282,7 +287,7 @@ void loop() {
  
  }
 
-const size_t settingsBufferSize = JSON_OBJECT_SIZE(6) + 80;
+const size_t settingsBufferSize = JSON_OBJECT_SIZE(6) + 120;
 StaticJsonBuffer<settingsBufferSize> jsonSettingsBuffer;
 char settingsBuf[settingsBufferSize];
 
@@ -290,8 +295,10 @@ void loadSettings() {
   // parse json config file
   File jsonFile = SPIFFS.open(settingsFile, "r");
   if (jsonFile) {
+    Serial.println("jsonFile opened");
     jsonSettingsBuffer.clear();
     JsonObject& root = jsonSettingsBuffer.parseObject(jsonFile);
+    root.printTo(Serial);
     if (root.success()) {
       maxBrightness = root["maxBrightness"]; 
       minBrightness = root["minBrightness"]; 
@@ -306,11 +313,15 @@ void loadSettings() {
       webSocket.sendTXT(0, settingsBuf, s);
       yield();
       yield();
-    }  else {
+    }  
+    else {
       Serial.println("failed to load JSON config");
     }
     jsonFile.close();
   }
+  else {
+    Serial.println("failed to load settings file");
+    }
 }
 
 //WiFi settings file
@@ -360,17 +371,24 @@ void saveSettings() {
   settingsRoot["blinkSpeed"] = blinkSpeed;
   settingsRoot["blinkRandomness"] = blinkRandomness;
   settingsRoot["fadeInDuration"] = fadeInSpeed;
-  settingsRoot["fadeOutDuration"] = fadeOutSpeed;  
+  settingsRoot["fadeOutDuration"] = fadeOutSpeed; 
   File jsonFile = SPIFFS.open(settingsFile, "w");
-  yield();
-  settingsRoot.printTo(jsonFile);
-  yield();
-  if (settingsRoot.success()) {
-    settingsRoot.printTo(Serial);
-  } else {
+  Serial.println("opening file");
+  if (jsonFile) {
+    yield();
+    settingsRoot.printTo(jsonFile);
+    yield();
+    if (settingsRoot.success()) {
+      settingsRoot.printTo(Serial);
+    } 
+    else {
     Serial.println("failed to save json config");
-  }
+    }
   jsonFile.close();
+  }
+  else {
+    Serial.println("failed to open settingsFile for writing");
+    }
 }
 
 void startPreheat() {
@@ -530,10 +548,12 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
   switch (type) {
     case WStype_DISCONNECTED:             // if the websocket is disconnected
       Serial.printf("[%u] Disconnected!\n", num);
+      digitalWrite(LED_RED, HIGH);
       break;
     case WStype_CONNECTED: {              // if a new websocket connection is established
         IPAddress ip = webSocket.remoteIP(num);
         Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
+        digitalWrite(LED_RED, LOW);
         state = "OFF";                  // Turn flicker off when a new connection is established
         loadSettings();
       }
@@ -613,5 +633,6 @@ String getContentType(String filename) { // determine the filetype of a given fi
   else if (filename.endsWith(".gz")) return "application/x-gzip";
   return "text/plain";
 }
+
 
 
