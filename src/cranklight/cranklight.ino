@@ -25,6 +25,13 @@ File fsUploadFile;                                    // a File variable to temp
 #define settingsFile  "/settings.json"
 #define wifiSettingsFile  "/wifiSettings.json"
 
+int wifiChannel = 2;
+int ip1 = 1; //1 for cranklights, 2 for satellites, 3 for big flashlights
+int ip4 = 2; //1-6 for cranklights, 1-3 for sats/big
+int ip2 = ip1;
+int ip3 = ip1;
+
+
 float voltage = 0;
 int sleepTime = 10;  //change to 5 minutes
 const int preheatValue = 30;
@@ -96,7 +103,7 @@ void fadein() {
       int currentMillis = millis();
       if ((currentMillis - previousMillis) >= fadeInTimeStep) {
          brightness = brightness+fadeInSpeed;
-         Serial.println(brightness);
+         //Serial.println(brightness);
          previousMillis = currentMillis;
          shine(brightness);
          }
@@ -113,6 +120,7 @@ void fadeout() {
   }
        
 void loop() {
+  Serial.println(state);
   webSocket.loop();                           // constantly check for websocket events
   server.handleClient();
   if(millis() > prevMillis + batteryCheckStep) { 
@@ -235,12 +243,12 @@ void loop() {
     else if (state == "SLOWFADEOUT") {
         fadeOutTimeStep = 10;
         targetBrightness = preheatValue;
-        Serial.println(brightness);
+        //Serial.println(brightness);
         if (brightness <= targetBrightness) {
-          Serial.println("lowest point");
+          //Serial.println("lowest point");
            //digitalWrite(LAMP, LOW);
-          startPreheat();
-          // state = "PAUSE";
+          //startPreheat();
+          state = "PAUSE";
         }
         else {
           fadeout();
@@ -360,7 +368,7 @@ void sendVoltage(float voltage) {
   voltageRoot["voltage"] = voltage;
   size_t s = voltageRoot.printTo(voltageBuf, sizeof(voltageBuf));
   webSocket.sendTXT(0, voltageBuf, s);
-  voltageRoot.printTo(Serial);
+  Serial.println(voltage);
 }
 
 void saveSettings() {
@@ -416,8 +424,13 @@ WiFiEventHandler stationConnectedHandler;
 WiFiEventHandler stationDisconnectedHandler;
 
 void startWiFi() { // Start a Wi-Fi access point, and try to connect to some given access points. Then wait for either an AP or STA connection
-  while(!WiFi.softAP(ssid, password)) {             // Start the access point
-    Serial.println("Starting AP");
+  IPAddress ip(ip1, ip2, ip3, ip4);
+  IPAddress gateway(1,2,3,1);
+  IPAddress subnet(255,255,255,0);
+  WiFi.softAPConfig(ip, gateway, subnet);
+  while(!WiFi.softAP(ssid, password, wifiChannel, false, 1)) {             // Start the access point
+    Serial.println("Starting AP with IP: ");
+    Serial.println(ip);
     delay(100);
   }
   stationConnectedHandler = WiFi.onSoftAPModeStationConnected(&onStationConnected);
